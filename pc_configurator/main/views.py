@@ -5,3 +5,6 @@ def stub(request):
 
 def about(request):
     return render(request, 'main/about.html')
+
+def homepage(request):
+    return render(request, 'main/homepage.html')
