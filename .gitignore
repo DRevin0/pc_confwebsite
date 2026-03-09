@@ -2,6 +2,7 @@ venv/
 env/
 .env/
 .venv/
+.json
 
 *.db
 *.sqlite3
