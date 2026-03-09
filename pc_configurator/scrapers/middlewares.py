@@ -2,11 +2,23 @@
 #
 # See documentation in:
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
-
 from scrapy import signals
+from fake_useragent import UserAgent
 
 # useful for handling different item types with a single interface
 from itemadapter import ItemAdapter
+
+
+class RandomUserAgentMiddleware:
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls()
+    
+    def __init__(self):
+        self.ua = UserAgent()
+    
+    def process_request(self, request, spider):
+        request.headers['User-Agent'] = self.ua.random
 
 
 class ScrapersSpiderMiddleware:
@@ -98,3 +110,4 @@ class ScrapersDownloaderMiddleware:
 
     def spider_opened(self, spider):
         spider.logger.info("Spider opened: %s" % spider.name)
+
