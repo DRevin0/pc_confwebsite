@@ -9,6 +9,29 @@
 
 BOT_NAME = "scrapers"
 
+DOWNLOAD_HANDLERS = {
+    "http": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
+    "https": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
+}
+PLAYWRIGHT_DEFAULT_NAVIGATION_TIMEOUT = 60000
+
+PLAYWRIGHT_LAUNCH_OPTIONS = {
+    "headless": False,#Открытие браузера в фоне
+    "args": [
+        "--disable-blink-features=AutomationControlled",
+        "--disable-features=IsolateOrigins,site-per-process",
+        "--disable-session-crashed-bubble",
+        "--disable-search-engine-choice-screen",
+    ]
+}
+PLAYWRIGHT_BROWSER_TYPE = "chromium"
+PLAYWRIGHT_CONTEXT_KWARGS = {
+    "headless": False,
+    "viewport": {"width": 1280, "height": 800},
+    "locale": "ru-RU",
+    "timezone_id": "Europe/Moscow",
+}
+
 SPIDER_MODULES = ["scrapers.spiders"]
 NEWSPIDER_MODULE = "scrapers.spiders"
 
@@ -19,16 +42,15 @@ ADDONS = {}
 #USER_AGENT = "scrapers (+http://www.yourdomain.com)"
 
 # Obey robots.txt rules
-ROBOTSTXT_OBEY = True
+ROBOTSTXT_OBEY = False
 
 # Concurrency and throttling settings
 #CONCURRENT_REQUESTS = 16
 CONCURRENT_REQUESTS_PER_DOMAIN = 1
-DOWNLOAD_DELAY = 1
+DOWNLOAD_DELAY = 3
 
 # Disable cookies (enabled by default)
-#COOKIES_ENABLED = False
-
+COOKIES_ENABLED = True
 # Disable Telnet Console (enabled by default)
 #TELNETCONSOLE_ENABLED = False
 
@@ -48,7 +70,7 @@ DOWNLOAD_DELAY = 1
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
     'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
-    'scrapers.middlewares.RandomUserAgentMiddleware': 543,
+    'scrapers.middlewares.RandomUserAgentMiddleware': None,#543 вкл
 
 }
 
@@ -73,7 +95,7 @@ AUTOTHROTTLE_START_DELAY = 5
 AUTOTHROTTLE_MAX_DELAY = 60
 # The average number of requests Scrapy should be sending in parallel to
 # each remote server
-AUTOTHROTTLE_TARGET_CONCURRENCY = 2.0
+AUTOTHROTTLE_TARGET_CONCURRENCY = 1.0
 # Enable showing throttling stats for every response received:
 AUTOTHROTTLE_DEBUG = True
 
@@ -89,3 +111,5 @@ AUTOTHROTTLE_DEBUG = True
 FEED_EXPORT_ENCODING = "utf-8"
 RETRY_TIMES = 3
 RETRY_HTTP_CODES = [429, 500, 502, 503, 504]
+HTTPCOMPRESSION_ENABLED = True
+HTTPERROR_ALLOWED_CODES = [401, 403, 404]

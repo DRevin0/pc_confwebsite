@@ -1,4 +1,4 @@
-# PCONFIGURATOR.WEB
+# CONFIGURATOR.WEB
 - Сервис подбора ПК по бюджету
 
 ## Статус проекта 
@@ -17,6 +17,9 @@
 | Scrapy | 2.14.1 | 
 | SQLite | - | 
 | fake-useragent | 2.2.0 |
+| undetected_chromedriver | 3.5.5 |
+| playwright | 1.58.0 |
+
 ---
 ### Структура проекта
 ```text
@@ -28,6 +31,16 @@ pc_configurator/
 │   ├── middlewares.py      # User-Agent ротация    
 │   └── settings.py         # Настройки Scrapy      
 ├── requirements.txt        # Зависимости           
-├── manage.py               # Django CLI            
+├── manage.py   						# Django CLI
+├──	get_dns_cookies.py			# Cookie для DNS                
 └── README.md                                       
 ```
+---
+
+### Dns spyder
+- Для избежания ошибок 403 от Qrator перед запуском паука необходимо запустить скрипт для получения кук командой: ``python get_dns_cookies.py`` 
+- Паук использует playwright для загрузки динамических страниц
+- На данный момент собирает информацию только по категории процессоров (название, цена, сокет, тепловыделение, количество ядер)
+**В следующих версиях планируется:**	
+	- Автоматическое обновление кук перед каждый запуском
+	- Поддержка других категорий комплектующих для пк

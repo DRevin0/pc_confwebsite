@@ -8,7 +8,7 @@ from fake_useragent import UserAgent
 # useful for handling different item types with a single interface
 from itemadapter import ItemAdapter
 
-
+"""
 class RandomUserAgentMiddleware:
     @classmethod
     def from_crawler(cls, crawler):
@@ -18,8 +18,46 @@ class RandomUserAgentMiddleware:
         self.ua = UserAgent()
     
     def process_request(self, request, spider):
-        request.headers['User-Agent'] = self.ua.random
+        user_agent = self.ua.random
+        request.headers['User-Agent'] = user_agent
 
+        spider.logger.debug(f"🔄 UA: {user_agent[:70]}...")
+
+        self._add_browser_headers(request, user_agent)
+
+    def _add_browser_headers(self, request, ua):
+        
+        # Определяем браузер по строке UA
+        if 'Firefox' in ua:
+            accept = 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
+            lang = 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7'
+        elif 'Edg' in ua:
+            accept = 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
+            lang = 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7'
+        elif 'Chrome' in ua:
+            accept = 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8'
+            lang = 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7'
+        elif 'Safari' in ua and 'Chrome' not in ua:
+            accept = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+            lang = 'ru-RU,ru;q=0.9,en;q=0.8'
+        else:
+            accept = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+            lang = 'ru-RU,ru;q=0.9,en;q=0.8'
+        
+        # Устанавливаем заголовки ТОЛЬКО если их ещё нет
+        request.headers.setdefault('Accept', accept)
+        request.headers.setdefault('Accept-Language', lang)
+        request.headers.setdefault('Accept-Encoding', 'gzip, deflate, br')
+        request.headers.setdefault('Connection', 'keep-alive')
+        request.headers.setdefault('Upgrade-Insecure-Requests', '1')
+        
+        # Sec-Fetch заголовки (для современных браузеров)
+        if 'Chrome' in ua or 'Firefox' in ua or 'Edg' in ua:
+            request.headers.setdefault('Sec-Fetch-Dest', 'document')
+            request.headers.setdefault('Sec-Fetch-Mode', 'navigate')
+            request.headers.setdefault('Sec-Fetch-Site', 'none')
+            request.headers.setdefault('Sec-Fetch-User', '?1')
+"""
 
 class ScrapersSpiderMiddleware:
     # Not all methods need to be defined. If a method is not defined,

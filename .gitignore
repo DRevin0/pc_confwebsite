@@ -2,8 +2,10 @@ venv/
 env/
 .env/
 .venv/
-.json
 
+.json
+.csv
+.pkl
 *.db
 *.sqlite3
 
