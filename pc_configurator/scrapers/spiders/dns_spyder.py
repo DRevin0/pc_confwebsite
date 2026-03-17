@@ -1,17 +1,23 @@
 import scrapy
 import pickle
+from pathlib import Path
 from scrapy_playwright.page import PageMethod
+
 
 class DnsSpider(scrapy.Spider):
     name = 'dns_spider'
     allowed_domains = ['dns-shop.ru']
     start_urls = ['https://www.dns-shop.ru/catalog/17a899cd16404e77/processory/']
     MAX_PAGES = 1
+    MAX_ITEMS = 5
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.items_scraped = 0
+
+        cookies_path = Path(__file__).parent.parent / "cookies" / "dns_cookies.pkl"
         try:
-            with open('dns_cookies.pkl', 'rb') as f:
+            with open(cookies_path, 'rb') as f:
                 cookies_list = pickle.load(f)
             
             #Преобразование кук в формат для Playwright
@@ -59,13 +65,19 @@ class DnsSpider(scrapy.Spider):
     def parse(self, response):
         #self.logger.info(f"parse вызван для {response.url}")
         #self.logger.info(f"Статус ответа: {response.status}")
-
+        if self.items_scraped >= self.MAX_ITEMS:
+            return
+        
         products = response.css('div.catalog-product')
         self.logger.info(f"Найдено товаров: {len(products)}")
+        requests_sent = 0
 
         page_number = response.meta.get('page', 1)
 
         for product in products:
+            if self.items_scraped + requests_sent >= self.MAX_ITEMS:
+                self.logger.info("Лимит товаров достигнут, останавливаем отправку новых запросов")
+                break
             product_url = product.css('a.catalog-product__name::attr(href)').get()
             #self.logger.info(f"Найдена ссылка: {product_url}")
             if product_url:
@@ -81,9 +93,10 @@ class DnsSpider(scrapy.Spider):
                         ]
                     }
                 )
+                requests_sent += 1
 
         # Пагинация
-        if page_number < self.MAX_PAGES:
+        if self.items_scraped + requests_sent < self.MAX_ITEMS: #page_number < self.MAX_PAGES
             next_page = response.css('a.pagination-widget__page-link_next::attr(href)').get()
             if next_page:
                 yield response.follow(
@@ -100,6 +113,9 @@ class DnsSpider(scrapy.Spider):
                 )
 
     def parse_product(self, response):
+        if self.items_scraped >= self.MAX_ITEMS:
+            self.logger.debug("Лимит уже достигнут, пропускаем товар")
+            return
         name = response.css('h1.product-card-top__title::text').get()
         if not name:
             name = response.css('h1::text').get()
@@ -123,6 +139,7 @@ class DnsSpider(scrapy.Spider):
             self.logger.info(f"Найдено характеристик (вариант 2): {len(specs)}")
         self.logger.debug(f"Характеристики: {specs}")
 
+        self.items_scraped += 1
         yield {
             'name': name,
             'price': price,
@@ -130,3 +147,6 @@ class DnsSpider(scrapy.Spider):
             'tdp': specs.get('Тепловыделение'),
             'cores': specs.get('Количество ядер'),
         }
+        if self.items_scraped >= self.MAX_ITEMS:
+            self.logger.info(f"Достигнут лимит товаров {self.MAX_ITEMS}, закрываем паука")
+            self.crawler.engine.close_spider(self, reason='items_limit_reached')
