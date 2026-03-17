@@ -3,6 +3,7 @@ env/
 .env/
 .venv/
 
+*.log
 *.json
 *.csv
 *.pkl
