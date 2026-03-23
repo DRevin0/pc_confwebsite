@@ -133,6 +133,8 @@ class CitilinkSpider(scrapy.Spider):
         yield {
             'name': name,
             'price': price,
+            'url':response.url,
+            'category':category,
             **specs,
         }
         if self.category_counts[category] >= self.ITEMS_PER_CATEGORY:

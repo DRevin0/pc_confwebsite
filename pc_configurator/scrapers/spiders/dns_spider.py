@@ -60,11 +60,15 @@ class DnsSpider(scrapy.Spider):
             return
 
         for cat, url in self.categories.items():
+            if cat in ('ssd_m2', 'ssd_sata'):
+                db_category = 'ssd'
+            else:
+                db_category = cat
             yield scrapy.Request(
                 url,
                 callback=self.parse,
                 meta={
-                    'category':cat,
+                    'category':db_category,
                     "playwright": True,
                     "playwright_context_kwargs": {
                         "storage_state": self.storage_state,  
@@ -161,6 +165,7 @@ class DnsSpider(scrapy.Spider):
         yield {
             'name': name,
             'price': price,
+            'url': response.url,
             **specs,
         }
         if self.category_counts[category] >= self.ITEMS_PER_CATEGORY:
