@@ -12,7 +12,7 @@ from components.models import Component, Price, Spec
 class DjangoPipeline:
     async def process_item(self, item, spider):
         # Обрабатываем только нужные пауки
-        if spider.name not in ['citilink_spider', 'dns_spider']:
+        if spider.name not in ['citilink_spider', 'dns_spider', 'yandex_market_spider']:
             return item
 
         url = item.get('url')
@@ -21,17 +21,27 @@ class DjangoPipeline:
             return item
 
         # Создаём или получаем компонент
+        new_name_raw = item.get('name', '')
+        new_name = new_name_raw.strip() if isinstance(new_name_raw, str) else ''
+        new_category = item.get('category', '')
+
         component, created = await sync_to_async(Component.objects.get_or_create)(
             url=url,
             defaults={
-                'name': item.get('name', ''),
-                'category': item.get('category', ''),
+                'name': new_name,
+                'category': new_category,
             }
         )
 
-        if not created and component.name != item.get('name'):
-            component.name = item.get('name')
-            await sync_to_async(component.save)()
+        if not created:
+            # Не перетираем имя пустым значением.
+            if new_name and component.name != new_name:
+                component.name = new_name
+                await sync_to_async(component.save)()
+            # Аналогично с категорией: если она пустая, но в новом item есть значение.
+            if new_category and component.category != new_category and not component.category:
+                component.category = new_category
+                await sync_to_async(component.save)()
 
         # Сохраняем цену
         price_str = item.get('price')
