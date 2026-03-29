@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'main',
     'scrapers',
     'components',
+    'builder',
 ]
 
 MIDDLEWARE = [

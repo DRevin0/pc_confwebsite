@@ -20,6 +20,9 @@ class Component(models.Model):
 
     def __str__(self):
         return self.name
+    def current_price(self):
+        price_obj = self.prices.first()
+        return price_obj.price if price_obj else None
 
 class Price(models.Model):
     component = models.ForeignKey(Component, on_delete=models.CASCADE, related_name='prices')

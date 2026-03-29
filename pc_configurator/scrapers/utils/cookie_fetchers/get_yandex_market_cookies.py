@@ -16,7 +16,8 @@ def main():
     with sync_playwright() as p:
         browser = p.chromium.launch(
             headless=False,
-            args=["--disable-blink-features=AutomationControlled"],
+            args=["--disable-blink-features=AutomationControlled",
+                  "--no-proxy-server"],
         )
         context = browser.new_context(
             locale="ru-RU",
@@ -25,7 +26,6 @@ def main():
         )
         page = context.new_page()
 
-        print("Переход на страницу Маркета...", flush=True)
         page.goto(url, wait_until="domcontentloaded", timeout=60000)
 
         print(
