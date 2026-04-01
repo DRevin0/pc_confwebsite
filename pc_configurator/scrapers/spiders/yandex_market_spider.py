@@ -5,7 +5,7 @@ from pathlib import Path
 from urllib.parse import urljoin
 import scrapy
 from scrapy_playwright.page import PageMethod
-
+from ..utils.category import category_config
 
 class YandexMarketSpider(scrapy.Spider):
     name = "yandex_market_spider"
@@ -16,50 +16,16 @@ class YandexMarketSpider(scrapy.Spider):
         "?rs=eJwzcvrEaM_BKLDwEKsEg8brNSYa04-zaswE4r87HrNrTAYypgDx1H-GGj1A-vVVbo3ZQLobiK_O_MCqcWPrM2YAcIobtw%2C%2C"
     )
 
-    REQUIRED_CATEGORIES_KEYS = [
-        "cpu",
-        "motherboard",
-        "gpu",
-        "ssd_sata",
-        "ssd_m2",
-        "ram",
-        "psu",
-        "air_cooling",
-        "liquid_cooling",
-        "case",
-    ]
+    REQUIRED_CATEGORIES_KEYS = category_config.REQUIRED_CATEGORIES_KEYS_yandex
+    CATEGORY_KEYWORDS = category_config.CATEGORY_KEYWORDS_yandex
+    FALLBACK_CATEGORY_MAP = category_config.FALLBACK_CATEGORY_MAP_yandex
+    CATEGORY_DB_MAP = category_config.CATEGORY_DB_MAP_yandex
 
-    CATEGORY_KEYWORDS = {
-        "cpu": ["процессор", "cpu)"],
-        "motherboard": ["материнск", "материнская плата"],
-        "gpu": ["видеокарт", "gpu"],
-        "ssd_m2": ["m.2", "m2", "ssd m.2", "sata m.2"],
-        "ssd_sata": ["sata", "ssd sata"],
-        "ram": ["оперативн", "памят"],
-        "psu": ["блок питания", "питания"],
-        "air_cooling": ["кулер", "воздушн"],
-        "liquid_cooling": ["жидкост", "водян", "liquid"],
-        "case": ["корпус", "компьютерные корпуса"],
-    }
+    ITEMS_PER_CATEGORY = 1
 
-    FALLBACK_CATEGORY_MAP = {
-        "ssd_sata": ["ssd_m2", "ssd"],
-        "ssd_m2": ["ssd_sata", "ssd"],
-        "air_cooling": ["liquid_cooling", "cooling", "кулеры и системы охлаждения"],
-        "liquid_cooling": ["air_cooling", "cooling", "кулеры и системы охлаждения"],
-    }
-
-    CATEGORY_DB_MAP = {
-        "ssd_sata": "ssd",
-        "ssd_m2": "ssd",
-        "air_cooling": "cooling",
-        "liquid_cooling": "cooling",
-    }
-
-    def __init__(self, start_url=None, items_per_page=3, categories_json=None, *args, **kwargs):
+    def __init__(self, start_url=None, categories_json=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.start_url = start_url or self.DEFAULT_START_URL
-        self.items_per_page = int(items_per_page)
 
         self.categories = None
         if categories_json:
@@ -244,7 +210,7 @@ class YandexMarketSpider(scrapy.Spider):
             return
 
         current = self.category_counts.get(category_key, 0)
-        if current >= self.items_per_page:
+        if current >= self.ITEMS_PER_CATEGORY:
             return
 
         product_links = self.extract_product_links(response)
@@ -254,7 +220,7 @@ class YandexMarketSpider(scrapy.Spider):
 
         requests_sent = 0
         for product_url in product_links:
-            if current + requests_sent >= self.items_per_page:
+            if current + requests_sent >= self.ITEMS_PER_CATEGORY:
                 break
             if product_url in self._seen_product_urls:
                 continue

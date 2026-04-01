@@ -1,39 +1,44 @@
 import scrapy
 import pickle
+import json
+import re
 from pathlib import Path
+from urllib.parse import urljoin
 from scrapy_playwright.page import PageMethod
-
+from ..utils.category import category_config
 
 class DnsSpider(scrapy.Spider):
     name = 'dns_spider'
     allowed_domains = ['dns-shop.ru']
 
-    categories = {
-        'cpu': 'https://www.dns-shop.ru/catalog/17a899cd16404e77/processory/',
-        'motherboard':'https://www.dns-shop.ru/catalog/17a89a0416404e77/materinskie-platy/',
-        'gpu':'https://www.dns-shop.ru/catalog/17a89aab16404e77/videokarty/',
-        'ssd_sata':'https://www.dns-shop.ru/catalog/8a9ddfba20724e77/ssd-nakopiteli/',
-        'ssd_m2':'https://www.dns-shop.ru/catalog/dd58148920724e77/ssd-m2-nakopiteli/',
-        'ram':'https://www.dns-shop.ru/catalog/17a89a3916404e77/operativnaa-pamat-dimm/',
-        'psu':'https://www.dns-shop.ru/catalog/17a89c2216404e77/bloki-pitania/',
-        'air_cooling':'https://www.dns-shop.ru/catalog/17a9cc2d16404e77/kulery-dla-processorov/',
-        'liquid_cooling':'https://www.dns-shop.ru/catalog/17a9cc9816404e77/sistemy-zidkostnogo-ohlazdenia/',
-        'case':'https://www.dns-shop.ru/catalog/17a89c5616404e77/korpusa/',
-    }
-    start_urls = list(categories.values())
-    MAX_PAGES = 1
+    DEFAULT_START_URL = "https://www.dns-shop.ru/catalog/88f4ff1d39dee00e/osnovnye-komplektuusie-dla-pk/"
+
+    REQUIRED_CATEGORIES_KEYS = category_config.REQUIRED_CATEGORIES_KEYS_dns
+    CATEGORY_KEYWORDS = category_config.CATEGORY_KEYWORDS_dns
+    FALLBACK_CATEGORY_MAP = category_config.FALLBACK_CATEGORY_MAP_dns
+    CATEGORY_DB_MAP = category_config.CATEGORY_DB_MAP_dns
+
     ITEMS_PER_CATEGORY = 3
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, categories_json=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.category_counts = {cat: 0 for cat in self.categories}
+
+        self.categories = None
+        if categories_json:
+            try:
+                self.categories = json.loads(categories_json)
+            except json.JSONDecodeError as e:
+                raise ValueError(f"categories_json не является валидным JSON: {e}")
+
+        self._seen_product_urls = set()
+        self.category_counts = {cat: 0 for cat in self.REQUIRED_CATEGORIES_KEYS}
+        self.storage_state = None
 
         cookies_path = Path(__file__).parent.parent / "cookies" / "dns_cookies.pkl"
         try:
             with open(cookies_path, 'rb') as f:
                 cookies_list = pickle.load(f)
-            
-            #Преобразование кук в формат для Playwright
+
             self.storage_state = {
                 "cookies": [
                     {
@@ -54,119 +59,203 @@ class DnsSpider(scrapy.Spider):
             self.logger.error("Файл dns_cookies.pkl не найден. Сначала запусти get_dns_cookies.py")
             self.storage_state = None
 
-    def start_requests(self):
-        if not self.storage_state:
-            self.logger.error("Файлы cookie не найдены, завершение работы")
+    def clean(self, text):
+        return (text or "").strip()
+
+    def extract_product_links(self, response):
+        links = response.css('a.catalog-product__name::attr(href)').getall()
+        if not links:
+            links = response.xpath('//a[contains(@href, "/product/")]/@href').getall()
+        if not links:
+            links = re.findall(r'https?://www\.dns-shop\.ru/product/[^"\'\\\s>]+', response.text)
+
+        result = []
+        seen = set()
+        for href in links:
+            href = href.strip()
+            full_url = urljoin(response.url, href)
+            if full_url not in seen:
+                seen.add(full_url)
+                result.append(full_url)
+        return result
+
+    def extract_category_urls(self, response):
+        found = {}
+        for a in response.xpath("//a[@href]"):
+            href = a.xpath("@href").get()
+            if not href:
+                continue
+            if "/product/" in href or "/card/" in href:
+                continue
+            if "catalog" not in href:
+                continue
+
+            text_parts = a.xpath(".//text()").getall()
+            text = self.clean(" ".join(text_parts))
+            if not text:
+                continue
+
+            text_lower = text.lower()
+            for cat_key, keywords in self.CATEGORY_KEYWORDS.items():
+                if cat_key in found:
+                    continue
+                for kw in keywords:
+                    if kw.lower() in text_lower:
+                        found[cat_key] = urljoin(response.url, href)
+                        break
+        return found
+
+    def init_categories(self, response):
+        self.categories = self.extract_category_urls(response)
+        if not self.categories:
+            self.logger.error("Не удалось извлечь категории с агрегаторной страницы. Нужны categories_json.")
             return
 
-        for cat, url in self.categories.items():
-            if cat in ('ssd_m2', 'ssd_sata'):
-                db_category = 'ssd'
-            else:
-                db_category = cat
+        for key in self.REQUIRED_CATEGORIES_KEYS:
+            if key not in self.categories:
+                for fb_key in self.FALLBACK_CATEGORY_MAP.get(key, []):
+                    if fb_key in self.categories:
+                        self.categories[key] = self.categories[fb_key]
+                        break
+
+        missing = [k for k in self.REQUIRED_CATEGORIES_KEYS if k not in self.categories]
+        if missing:
+            self.logger.warning(f"Не найдены некоторые категории: {missing}. Они будут пропущены.")
+
+        self.category_counts = {cat: 0 for cat in self.categories if cat in self.REQUIRED_CATEGORIES_KEYS}
+
+        for cat_key, url in self.categories.items():
+            if cat_key not in self.REQUIRED_CATEGORIES_KEYS:
+                continue
+            if not url:
+                continue
+
+            db_category = self.CATEGORY_DB_MAP.get(cat_key, cat_key)
             yield scrapy.Request(
                 url,
-                callback=self.parse,
+                callback=self.parse_category,
                 meta={
-                    'category':db_category,
+                    'category_key': cat_key,
+                    'category': db_category,
                     "playwright": True,
-                    "playwright_context_kwargs": {
-                        "storage_state": self.storage_state,  
-                    },
+                    "playwright_context_kwargs": {"storage_state": self.storage_state},
                     "playwright_page_methods": [
-                        #PageMethod("wait_for_selector", "body", timeout=30000),
                         PageMethod("wait_for_selector", "div.catalog-product", timeout=30000),
                     ],
                 }
             )
 
-    def parse(self, response):
-        #self.logger.info(f"parse вызван для {response.url}")
-        #self.logger.info(f"Статус ответа: {response.status}")
-        category = response.meta['category']
-        current = self.category_counts[category]
-        if current >= self.ITEMS_PER_CATEGORY:
+    def start_requests(self):
+        if not self.storage_state:
+            self.logger.error("Файлы cookie не найдены, завершение работы")
             return
-        
-        products = response.css('div.catalog-product')
-        self.logger.info(f"Найдено товаров: {len(products)}")
-        requests_sent = 0
 
-#        page_number = response.meta.get('page', 1)
-
-        for product in products:
-            if current + requests_sent >= self.ITEMS_PER_CATEGORY:
-                self.logger.info(f"{category}, лимит товаров достигнут, останавливаем отправку новых запросов")
-                break
-            product_url = product.css('a.catalog-product__name::attr(href)').get()
-            #self.logger.info(f"Найдена ссылка: {product_url}")
-            if product_url:
-                yield response.follow(
-                    product_url,
-                    callback=self.parse_product,
+        if self.categories:
+            for cat_key, url in self.categories.items():
+                if not url:
+                    continue
+                db_category = self.CATEGORY_DB_MAP.get(cat_key, cat_key)
+                yield scrapy.Request(
+                    url,
+                    callback=self.parse_category,
                     meta={
-                        'category':category,
-                        'playwright': True,
-                        'playwright_page_methods': [
-                            #PageMethod("wait_for_selector", "div.product-card-top_specs-item-title", timeout=30000),
-                            PageMethod("evaluate", "window.scrollTo(0, document.body.scrollHeight)"),
-                            PageMethod("wait_for_timeout", 2000),
-                        ]
+                        'category_key': cat_key,
+                        'category': db_category,
+                        "playwright": True,
+                        "playwright_context_kwargs": {"storage_state": self.storage_state},
+                        "playwright_page_methods": [
+                            PageMethod("wait_for_selector", "div.catalog-product", timeout=30000),
+                        ],
                     }
                 )
-                requests_sent += 1
+        else:
+            yield scrapy.Request(
+                self.DEFAULT_START_URL,
+                callback=self.init_categories,
+                meta={
+                    "playwright": True,
+                    "playwright_context_kwargs": {"storage_state": self.storage_state},
+                    "playwright_page_methods": [
+                        PageMethod("wait_for_selector", "body", timeout=10000),
+                        PageMethod("wait_for_timeout", 3000),
+                        PageMethod("evaluate", "window.scrollTo(0, document.body.scrollHeight)"),
+                        PageMethod("wait_for_timeout", 2000),
+                    ],
+                },
+            )
 
-        # Пагинация(на днс не используется)
-#        if self.items_scraped + requests_sent < self.MAX_ITEMS: #page_number < self.MAX_PAGES
-#            next_page = response.css('a.pagination-widget__page-link_next::attr(href)').get()
-#            if next_page:
-#                yield response.follow(
-#                    next_page,
-#                    callback=self.parse,
-#                    meta={
-#                        'playwright': True,
-#                        'playwright_page_methods': [
-#                            #PageMethod("add_cookies", self.playwright_cookies),  # на всякий случай
-#                            PageMethod("wait_for_selector", "div.catalog-item"),
-#                        ],
-#                        'page': page_number + 1
-#                    }
-#                )
+    def parse_category(self, response):
+        category_key = response.meta.get('category_key')
+        db_category = response.meta.get('category')
+        if not category_key:
+            return
+
+        current = self.category_counts.get(category_key, 0)
+        if current >= self.ITEMS_PER_CATEGORY:
+            return
+
+        product_links = self.extract_product_links(response)
+        if not product_links:
+            self.logger.warning(f"Не найдено ссылок на товары на странице: {response.url}")
+            return
+
+        requests_sent = 0
+        for product_url in product_links:
+            if current + requests_sent >= self.ITEMS_PER_CATEGORY:
+                break
+            if product_url in self._seen_product_urls:
+                continue
+
+            self._seen_product_urls.add(product_url)
+            requests_sent += 1
+            yield scrapy.Request(
+                product_url,
+                callback=self.parse_product,
+                meta={
+                    'category_key': category_key,
+                    'category': db_category,
+                    'playwright': True,
+                    'playwright_page_methods': [
+                        PageMethod("evaluate", "window.scrollTo(0, document.body.scrollHeight)"),
+                        PageMethod("wait_for_timeout", 2000),
+                    ]
+                }
+            )
 
     def parse_product(self, response):
-        category = response.meta['category']
-        if self.category_counts[category] >= self.ITEMS_PER_CATEGORY:
-            self.logger.debug(f"{category}, лимит товаров достигнут, останавливаем отправку новых запросов")
+        category_key = response.meta.get('category_key')
+        db_category = response.meta.get('category')
+
+        if self.category_counts.get(category_key, 0) >= self.ITEMS_PER_CATEGORY:
             return
+
         name = response.css('h1.product-card-top__title::text').get()
         if not name:
             name = response.css('h1::text').get()
-        self.logger.info(f"Название: {name}")
+        name = self.clean(name)
 
         price = response.css('div.product-buy__price::text').get()
         if price:
             price = price.replace('\xa0', ' ').strip()
         else:
             price = response.css('div.product-buy_price-wrap span::text').get()
-        self.logger.info(f"Цена: {price}")
+        if price:
+            price = self.clean(price)
 
         specs = {}
-
-        titles2 = response.css('div.product-card-top__specs-item-title::text').getall()
-        values2 = response.css('div.product-card-top__specs-item-content::text').getall()
-        if titles2 and values2:
-            for title, value in zip(titles2, values2):
+        titles = response.css('div.product-card-top__specs-item-title::text').getall()
+        values = response.css('div.product-card-top__specs-item-content::text').getall()
+        if titles and values:
+            for title, value in zip(titles, values):
                 if title and value:
-                    specs[title.strip().rstrip(':')] = value.strip()
-            self.logger.info(f"Найдено характеристик: {len(specs)}")
-        self.logger.debug(f"Характеристики: {specs}")
+                    specs[self.clean(title).rstrip(':')] = self.clean(value)
 
-        self.category_counts[category] += 1
+        self.category_counts[category_key] += 1
+
         yield {
             'name': name,
             'price': price,
             'url': response.url,
+            'category': db_category,
             **specs,
         }
-        if self.category_counts[category] >= self.ITEMS_PER_CATEGORY:
-            self.logger.debug(f"{category}, лимит товаров достигнут, останавливаем отправку новых запросов")
