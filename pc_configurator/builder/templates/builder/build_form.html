@@ -1,7 +1,126 @@
 {% extends "main/base.html" %}
-{% load static %}
 
 {% block title %}Сборка ПК под бюджет{% endblock %}
 
 {% block content %}
+<div class="container py-5">
+
+  <div class="hero text-center mb-4">
+    <span class="hero-badge mb-3">
+      <i class="bi bi-cpu"></i> Подбор комплектующих
+    </span>
+    <h1 class="hero-title fw-bold">Сборка ПК под бюджет</h1>
+    <p class="hero-subtitle mx-auto text-center">
+      Введите ваш бюджет — алгоритм подберёт оптимальные комплектующие из актуальных цен.
+    </p>
+  </div>
+
+  <div class="row justify-content-center mb-5">
+    <div class="col-md-6">
+      <div class="main-card">
+        <form method="post" novalidate>
+          {% csrf_token %}
+          <div class="mb-3">
+            <label for="{{ form.budget.id_for_label }}" class="form-label fw-semibold">
+              {{ form.budget.label }}
+            </label>
+            {{ form.budget }}
+            {% if form.budget.errors %}
+              <div class="text-danger small mt-1">{{ form.budget.errors|join:", " }}</div>
+            {% endif %}
+            <div class="form-text text-secondary">{{ form.budget.help_text }}</div>
+          </div>
+          <button type="submit" class="btn btn-primary w-100 fw-semibold">
+            <i class="bi bi-lightning-charge-fill me-1"></i> Подобрать сборку
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  {% if error_message %}
+  <div class="row justify-content-center mb-4">
+    <div class="col-md-8">
+      <div class="alert alert-warning d-flex align-items-center gap-2" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        {{ error_message }}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if build %}
+  {% with total=build.total budget=build.budget %}
+  <div class="content-shell">
+
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 px-2">
+      <div>
+        <h2 class="fw-bold mb-0" style="font-size:1.5rem;">
+          <i class="bi bi-check-circle-fill me-2" style="color:var(--accent-2);"></i>
+          Готовая сборка
+        </h2>
+      </div>
+      <div class="text-end">
+        <div class="small text-secondary">Итого</div>
+        <div class="fw-bold fs-5" style="color:var(--accent);">{{ total|floatformat:0 }} ₽</div>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      {% for item in build.items %}
+      {% with component=item.component price=item.price %}
+      <div class="col-sm-6 col-lg-4 col-xl-3">
+        <div class="main-card h-100 d-flex flex-column gap-2">
+          <div class="d-flex align-items-center gap-2 mb-1">
+            <span class="icon-circle">
+              {% if component.category == 'cpu' %}<i class="bi bi-cpu"></i>
+              {% elif component.category == 'gpu' %}<i class="bi bi-gpu-card"></i>
+              {% elif component.category == 'motherboard' %}<i class="bi bi-motherboard"></i>
+              {% elif component.category == 'ram' %}<i class="bi bi-memory"></i>
+              {% elif component.category == 'ssd' %}<i class="bi bi-device-ssd"></i>
+              {% elif component.category == 'psu' %}<i class="bi bi-plug"></i>
+              {% elif component.category == 'cooling' %}<i class="bi bi-wind"></i>
+              {% elif component.category == 'case' %}<i class="bi bi-box"></i>
+              {% else %}<i class="bi bi-puzzle"></i>
+              {% endif %}
+            </span>
+            <span class="small text-secondary text-uppercase fw-semibold">
+              {{ component.get_category_display }}
+            </span>
+          </div>
+          <div class="fw-semibold lh-sm" style="font-size:0.92rem;">{{ component.name }}</div>
+          <div class="mt-auto d-flex align-items-center justify-content-between">
+            <div>
+              <span class="fw-bold" style="color:var(--accent); font-size:1.05rem;">
+                {{ price|floatformat:0 }} ₽
+              </span>
+              <div class="text-secondary" style="font-size:0.7rem;">
+                <i class="bi bi-clock me-1"></i>цена от {{ item.price_date|date:"d.m.Y" }}
+              </div>
+            </div>
+            <a href="{{ component.url }}" target="_blank" rel="noopener"
+               class="btn btn-sm btn-outline-secondary py-0 px-2"
+               style="font-size:0.78rem;">
+              Купить <i class="bi bi-box-arrow-up-right ms-1"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+      {% endwith %}
+      {% endfor %}
+    </div>
+
+    <div class="mt-4 px-2 small text-secondary">
+      <i class="bi bi-exclamation-circle me-1"></i>
+      Цены взяты из последнего парсинга и могут не совпадать с актуальными на сайте магазина.
+      Перед покупкой проверяйте цену по ссылке. Итоговая стоимость по данным парсинга:
+      <strong style="color:var(--accent);">{{ total|floatformat:0 }} ₽</strong>
+      из {{ budget|floatformat:0 }} ₽ бюджета.
+    </div>
+
+  </div>
+  {% endwith %}
+  {% endif %}
+
+</div>
 {% endblock %}

@@ -8,7 +8,8 @@ class BudgetForm(forms.Form):
         min_value=1000,
         max_value=500000,
         initial=50000,
-        help_text='Введите сумму в рублях'
+        help_text='Введите сумму в рублях',
+        widget=forms.NumberInput(attrs={'class': 'form-control form-control-lg', 'placeholder': '50000'}),
     )
 
 def build_view(request):
