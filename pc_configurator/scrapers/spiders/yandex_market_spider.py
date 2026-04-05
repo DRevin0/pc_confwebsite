@@ -1,17 +1,15 @@
-import json
-import pickle
 import re
-from pathlib import Path
 from urllib.parse import urljoin
-import scrapy
 from scrapy_playwright.page import PageMethod
 from ..utils.category import category_config
+from .base_spider import BaseSpider
 
-class YandexMarketSpider(scrapy.Spider):
+class YandexMarketSpider(BaseSpider):
     name = "yandex_market_spider"
     allowed_domains = ["market.yandex.ru"]
 
-    DEFAULT_START_URL = (
+    cookies_filename = "yandex_market_cookies.pkl"
+    start_url = (
         "https://market.yandex.ru/catalog--komplektuiushchie-dlia-kompiutera-v-nizhnem-novgorode/26912630/list"
         "?rs=eJwzcvrEaM_BKLDwEKsEg8brNSYa04-zaswE4r87HrNrTAYypgDx1H-GGj1A-vVVbo3ZQLobiK_O_MCqcWPrM2YAcIobtw%2C%2C"
     )
@@ -20,148 +18,31 @@ class YandexMarketSpider(scrapy.Spider):
     CATEGORY_KEYWORDS = category_config.CATEGORY_KEYWORDS_yandex
     FALLBACK_CATEGORY_MAP = category_config.FALLBACK_CATEGORY_MAP_yandex
     CATEGORY_DB_MAP = category_config.CATEGORY_DB_MAP_yandex
-
-    ITEMS_PER_CATEGORY = 1
+    ITEMS_PER_CATEGORY = 40
 
     def __init__(self, start_url=None, categories_json=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.start_url = start_url or self.DEFAULT_START_URL
+        super().__init__(categories_json=categories_json, *args, **kwargs)
+        if start_url:
+            self.start_url = start_url
 
-        self.categories = None
-        if categories_json:
-            try:
-                self.categories = json.loads(categories_json)
-            except json.JSONDecodeError as e:
-                raise ValueError(f"categories_json не является валидным JSON: {e}")
+    def extract_product_links(self, response):
+        links = response.xpath("//a[contains(@href, '/card/')]/@href").getall()
+        links = [urljoin(response.url, href) for href in links if href]
 
-        self._seen_product_urls = set()
-        self.category_counts = {cat: 0 for cat in self.REQUIRED_CATEGORIES_KEYS}
-        self.storage_state = None
+        if not links:
+            links = re.findall(r"https?://market\.yandex\.ru/card/[^\"'\s>]+", response.text)
 
-        cookies_path = Path(__file__).parent.parent / "cookies" / "yandex_market_cookies.pkl"
-        try:
-            with open(cookies_path, "rb") as f:
-                cookies_list = pickle.load(f) or []
-
-            self.storage_state = {
-                "cookies": [
-                    {
-                        "name": c.get("name"),
-                        "value": c.get("value"),
-                        "domain": c.get("domain", ".market.yandex.ru"),
-                        "path": c.get("path", "/"),
-                        "expires": c.get("expires", -1),
-                        "httpOnly": c.get("httpOnly", False),
-                        "secure": c.get("secure", True),
-                        "sameSite": c.get("sameSite", "Lax"),
-                    }
-                    for c in cookies_list
-                    if c.get("name") is not None and c.get("value") is not None
-                ]
-            }
-            self.logger.info(f"Загружено {len(self.storage_state['cookies'])} кук из yandex_market_cookies.pkl")
-        except FileNotFoundError:
-            self.logger.error(
-                "Файл cookie yandex_market_cookies.pkl не найден. "
-                "Сначала запустите get_yandex_market_cookies.py"
-            )
-            self.storage_state = None
-
-    def start_requests(self):
-        if not self.storage_state:
-            self.logger.error("Файлы cookie не найдены, завершение работы")
-            return
-
-        if not self.categories:
-            yield scrapy.Request(
-                self.start_url,
-                callback=self.init_categories,
-                meta={
-                    "playwright": True,
-                    "category": None,
-                    "playwright_context_kwargs": {
-                        "storage_state": self.storage_state,
-                    },
-                    "playwright_page_methods": [
-                        PageMethod("wait_for_timeout", 3000),
-                    ],
-                },
-            )
-            return
-
-        for cat, url in self.categories.items():
-            if not url:
-                continue
-
-            db_category = self.CATEGORY_DB_MAP.get(cat, cat)
-            yield scrapy.Request(
-                url,
-                callback=self.parse_category,
-                meta={
-                    "category_key": cat,
-                    "category": db_category,
-                    "playwright": True,
-                    "playwright_context_kwargs": {
-                        "storage_state": self.storage_state,
-                    },
-                    "playwright_page_methods": [
-                        PageMethod("wait_for_selector", "body", timeout=10000),
-                        PageMethod("wait_for_timeout", 3000),
-                        PageMethod("evaluate", "window.scrollTo(0, document.body.scrollHeight)"),
-                        PageMethod("wait_for_timeout", 2000),
-                    ],
-                },
-            )
-
-    def clean(self, text):
-        return (text or "").strip()
-
-    def init_categories(self, response):
-        self.categories = self.extract_category_urls(response)
-        if not self.categories:
-            self.logger.error("Не удалось извлечь категории с агрегаторной страницы. Нужны categories_json.")
-            return
-
-        for key in self.REQUIRED_CATEGORIES_KEYS:
-            if key not in self.categories:
-                for fb_key in self.FALLBACK_CATEGORY_MAP.get(key, []):
-                    if fb_key in self.categories:
-                        self.categories[key] = self.categories[fb_key]
-                        break
-
-        missing = [k for k in self.REQUIRED_CATEGORIES_KEYS if k not in self.categories]
-        if missing:
-            self.logger.warning(f"Не найдены некоторые категории: {missing}. Они будут пропущены.")
-
-        for cat, url in self.categories.items():
-            if cat not in self.REQUIRED_CATEGORIES_KEYS:
-                continue
-            if not url:
-                continue
-
-            db_category = self.CATEGORY_DB_MAP.get(cat, cat)
-            yield scrapy.Request(
-                url,
-                callback=self.parse_category,
-                meta={
-                    "category_key": cat,
-                    "category": db_category,
-                    "playwright": True,
-                    "playwright_context_kwargs": {
-                        "storage_state": self.storage_state,
-                    },
-                    "playwright_page_methods": [
-                        PageMethod("wait_for_selector", "body", timeout=10000),
-                        PageMethod("wait_for_timeout", 3000),
-                        PageMethod("evaluate", "window.scrollTo(0, document.body.scrollHeight)"),
-                        PageMethod("wait_for_timeout", 2000),
-                    ],
-                },
-            )
+        result = []
+        seen = set()
+        for href in links:
+            href = href.strip()
+            if href and href not in seen and "/card/" in href:
+                seen.add(href)
+                result.append(href)
+        return result
 
     def extract_category_urls(self, response):
         found = {}
-
         for a in response.xpath("//a[@href]"):
             href = a.xpath("@href").get()
             if not href:
@@ -184,67 +65,52 @@ class YandexMarketSpider(scrapy.Spider):
                     if kw.lower() in text_lower:
                         found[cat_key] = urljoin(response.url, href)
                         break
-
         return found
 
-    def extract_product_links(self, response):
-        links = response.xpath("//a[contains(@href, '/card/')]/@href").getall()
-        links = [urljoin(response.url, href) for href in links if href]
+    def get_start_meta(self):
+        return {
+            "playwright": True,
+            "playwright_context_kwargs": {"storage_state": self.storage_state},
+            "playwright_page_methods": [
+                PageMethod("wait_for_timeout", 3000),
+            ],
+        }
 
-        if not links:
-            links = re.findall(r"https?://market\.yandex\.ru/card/[^\"'\s>]+", response.text)
+    def get_category_meta(self, category_key, db_category):
+        return {
+            'category_key': category_key,
+            'category': db_category,
+            "playwright": True,
+            "playwright_context_kwargs": {"storage_state": self.storage_state},
+            "playwright_page_methods": [
+                PageMethod("wait_for_selector", "body", timeout=10000),
+                PageMethod("wait_for_timeout", 3000),
+                PageMethod("evaluate", "window.scrollTo(0, document.body.scrollHeight)"),
+                PageMethod("wait_for_timeout", 2000),
+            ],
+        }
 
-        result = []
-        seen = set()
-        for href in links:
-            href = href.strip()
-            if href and href not in seen and "/card/" in href:
-                seen.add(href)
-                result.append(href)
-        return result
+    def get_product_meta(self, category_key, db_category):
+        return {
+            'category_key': category_key,
+            'category': db_category,
+            "playwright": True,
+            "playwright_page_methods": [
+                PageMethod("wait_for_selector", "body", timeout=10000),
+                PageMethod("wait_for_timeout", 2500),
+            ],
+        }
 
-    def parse_category(self, response):
-        category_key = response.meta.get("category_key")
-        db_category = response.meta.get("category")
-        if not category_key:
-            return
+    def _extract_price(self, response):
+        m = re.search(r'"price"\s*:\s*\{\s*"value"\s*:\s*"(\d+)"\s*,\s*"currency"\s*:\s*"RUR"', response.text)
+        if m:
+            return m.group(1)
+        m2 = re.search(r'"price"\s*:\s*\{\s*"value"\s*:\s*"(\d+)"', response.text)
+        if m2:
+            return m2.group(1)
+        return None
 
-        current = self.category_counts.get(category_key, 0)
-        if current >= self.ITEMS_PER_CATEGORY:
-            return
-
-        product_links = self.extract_product_links(response)
-        if not product_links:
-            self.logger.warning(f"Не нашёл ссылок на карточки на странице: {response.url}")
-            return
-
-        requests_sent = 0
-        for product_url in product_links:
-            if current + requests_sent >= self.ITEMS_PER_CATEGORY:
-                break
-            if product_url in self._seen_product_urls:
-                continue
-
-            self._seen_product_urls.add(product_url)
-            requests_sent += 1
-            yield scrapy.Request(
-                product_url,
-                callback=self.parse_product,
-                meta={
-                    "category_key": category_key,
-                    "category": db_category,
-                    "playwright": True,
-                    "playwright_page_methods": [
-                        PageMethod("wait_for_selector", "body", timeout=10000),
-                        PageMethod("wait_for_timeout", 2500),
-                    ],
-                },
-            )
-
-    def parse_product(self, response):
-        db_category = response.meta.get("category")
-        category_key = response.meta.get("category_key")
-
+    def _extract_name(self, response):
         name = self.clean(response.xpath("//h1//text()").get())
         if not name:
             name = self.clean(response.xpath("//meta[@property='og:title']/@content").get())
@@ -254,23 +120,29 @@ class YandexMarketSpider(scrapy.Spider):
                 m = re.search(r'"title"\s*:\s*"([^"]{3,500})"', ld_title)
                 if m:
                     name = self.clean(m.group(1))
+        return name
+    
+    def _enrich_product_item(self, response, item):
+        specs = {}
+        spec_blocks = response.xpath('//div[contains(@class, "_3rW2x") and contains(@class, "_1o0tA")]')
+        for block in spec_blocks:
+            if block.xpath('.//a[@data-autotest-id="full-specs-link"]'):
+                continue
 
-        price_digits = None
-        m = re.search(r'"price"\s*:\s*\{\s*"value"\s*:\s*"(\d+)"\s*,\s*"currency"\s*:\s*"RUR"', response.text)
-        if m:
-            price_digits = m.group(1)
-        else:
-            m2 = re.search(r'"price"\s*:\s*\{\s*"value"\s*:\s*"(\d+)"', response.text)
-            if m2:
-                price_digits = m2.group(1)
+            name = block.xpath('.//span[@data-auto="product-spec"]/text()').get()
+            if not name:
+                continue
+            if name.lower() == 'артикул маркета':
+                continue
+            name = self.clean(name).rstrip(':')
 
-        if category_key:
-            self.category_counts[category_key] = self.category_counts.get(category_key, 0) + 1
+            value = block.xpath('.//div[@class="b2ZT4"]//span/text()').get()
+            if not value:
+                value = block.xpath('.//div[@class="b2ZT4"]//div[contains(@class, "ds-text")]/text()').get()
+            if not value:
+                value = block.xpath('.//div[@class="b2ZT4"]/text()').get()
+            if value:
+                value = self.clean(value)
+                specs[name] = value
 
-        yield {
-            "name": name,
-            "price": price_digits,
-            "url": response.url,
-            "category": db_category or "",
-        }
-
+        item.update(specs)
