@@ -31,11 +31,12 @@ pc_configurator/
 │   ├── middlewares.py      # User-Agent ротация    
 │   └── settings.py         # Настройки Scrapy      
 ├── requirements.txt        # Зависимости           
-├── manage.py   			      # Django CLI
-├──	run_dns_parser			    # Запуск парсера для DNS               
-├── run_citilink_parser		  # Запуск парсера для Ситилинк
+├── manage.py   			# Django CLI
+├──	run_dns_parser			# Запуск парсера для DNS               
+├── run_citilink_parser		# Запуск парсера для Ситилинк
 ├── run_yandex...           # Запуск парсера для Яндекс Маркета
 └── README.md                                  
+                               
 ```
 ---
 
