@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'scrapers',
     'components',
     'builder',
+    'analyzer',
 ]
 
 MIDDLEWARE = [
