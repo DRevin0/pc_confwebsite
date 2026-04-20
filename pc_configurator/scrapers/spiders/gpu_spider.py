@@ -6,7 +6,7 @@ from scrapers.utils.helper_analyzer import build_technical_city_url
 logger = logging.getLogger(__name__)
 
 class TechnicalCityGPU(scrapy.Spider):
-    name = "technical_city_gpu"
+    name = "gpu_spider" 
 
     def __init__(self, gpu_name=None, *args, **kwargs):
         super().__init__(*args, **kwargs)

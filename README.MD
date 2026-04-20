@@ -23,8 +23,11 @@
 ---
 ### Структура проекта
 ```text
-pc_configurator/                                    
-├── config/                 # Настройки Django      
+pc_configurator/   
+├── analyzer/               # Анализ фпс    
+├── config/                 # Настройки Django     
+├── builder/                # Создание виртуальной сборки
+├── components/             
 ├── main/                   # Основное приложение   
 ├── scrapers/               # Scrapy парсеры        
 │   ├── spiders/            # Пауки для сайтов      
@@ -35,6 +38,7 @@ pc_configurator/
 ├──	run_dns_parser			# Запуск парсера для DNS               
 ├── run_citilink_parser		# Запуск парсера для Ситилинк
 ├── run_yandex...           # Запуск парсера для Яндекс Маркета
+├── run_gpu_parser          # Запуск парсера для анализа фпс
 └── README.md                                  
                                
 ```

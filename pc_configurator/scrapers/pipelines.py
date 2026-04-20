@@ -8,7 +8,6 @@ import re
 from decimal import Decimal
 from asgiref.sync import sync_to_async
 from components.models import Component, Price, Spec
-
 class DjangoPipeline:
     async def process_item(self, item, spider):
         # Обрабатываем только нужные пауки
