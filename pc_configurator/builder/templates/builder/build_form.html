@@ -110,6 +110,57 @@
       {% endfor %}
     </div>
 
+    {% if fps %}
+    <div class="content-shell mt-5">
+
+      <button class="btn btn-outline-primary fw-semibold mb-3"
+              type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#fpsCollapse"
+              aria-expanded="false"
+              aria-controls="fpsCollapse">
+        <i class="bi bi-graph-up-arrow me-1"></i>
+        Показать FPS в играх
+      </button>
+
+      <div class="collapse" id="fpsCollapse">
+        <div class="card card-body">
+
+          <h3 class="fw-bold mb-3">
+            <i class="bi bi-graph-up-arrow me-2" style="color:var(--accent);"></i>
+            FPS в играх
+          </h3>
+
+          <table class="table table-striped table-bordered">
+            <thead class="table-light">
+              <tr>
+                <th>Игра</th>
+                <th>Разрешение</th>
+                <th>FPS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in fps %}
+              <tr>
+                <td>{{ row.game }}</td>
+                <td>{{ row.resolution }}</td>
+                <td>{{ row.fps_min }}–{{ row.fps_max }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+
+          <div class="small text-secondary mt-2">
+            <i class="bi bi-info-circle me-1"></i>
+            FPS может отличаться в пределах 5-10%
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+    {% endif %}
+
     <div class="mt-4 px-2 small text-secondary">
       <i class="bi bi-exclamation-circle me-1"></i>
       Цены взяты из последнего парсинга и могут не совпадать с актуальными на сайте магазина.

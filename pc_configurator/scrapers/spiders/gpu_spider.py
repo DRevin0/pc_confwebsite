@@ -35,7 +35,6 @@ class TechnicalCityGPU(scrapy.Spider):
             normalized = self._normalize_tab_label(raw_label) if raw_label else f"unknown-{i}"
 
             short_resolution = normalized.split("_", 1)[0] if "_" in normalized else normalized
-            resolution_index = i
 
             for row in tab.css("table.compare-table tr"):
                 game = row.css("td:nth-child(1)::text").get()
