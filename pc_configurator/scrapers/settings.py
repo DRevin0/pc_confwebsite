@@ -76,7 +76,7 @@ COOKIES_ENABLED = True
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
     'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
-    'scrapers.middlewares.RandomUserAgentMiddleware': None,#543 вкл
+    #'scrapers.middlewares.RandomUserAgentMiddleware': None,#543 вкл
 
 }
 
