@@ -49,8 +49,7 @@
   </div>
   {% endif %}
 
-  {% if build %}
-  {% with total=build.total budget=build.budget %}
+  {% if build_items %}
   <div class="content-shell">
 
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 px-2">
@@ -62,43 +61,42 @@
       </div>
       <div class="text-end">
         <div class="small text-secondary">Итого</div>
-        <div class="fw-bold fs-5" style="color:var(--accent);">{{ total|floatformat:0 }} ₽</div>
+        <div class="fw-bold fs-5" style="color:var(--accent);">{{ build_total|floatformat:0 }} ₽</div>
       </div>
     </div>
 
     <div class="row g-3">
-      {% for item in build.items %}
-      {% with component=item.component price=item.price %}
+      {% for item in build_items %}
       <div class="col-sm-6 col-lg-4 col-xl-3">
         <div class="main-card h-100 d-flex flex-column gap-2">
           <div class="d-flex align-items-center gap-2 mb-1">
             <span class="icon-circle">
-              {% if component.category == 'cpu' %}<i class="bi bi-cpu"></i>
-              {% elif component.category == 'gpu' %}<i class="bi bi-gpu-card"></i>
-              {% elif component.category == 'motherboard' %}<i class="bi bi-motherboard"></i>
-              {% elif component.category == 'ram' %}<i class="bi bi-memory"></i>
-              {% elif component.category == 'ssd' %}<i class="bi bi-device-ssd"></i>
-              {% elif component.category == 'psu' %}<i class="bi bi-plug"></i>
-              {% elif component.category == 'cooling' %}<i class="bi bi-wind"></i>
-              {% elif component.category == 'case' %}<i class="bi bi-box"></i>
+              {% if item.component.category == 'cpu' %}<i class="bi bi-cpu"></i>
+              {% elif item.component.category == 'gpu' %}<i class="bi bi-gpu-card"></i>
+              {% elif item.component.category == 'motherboard' %}<i class="bi bi-motherboard"></i>
+              {% elif item.component.category == 'ram' %}<i class="bi bi-memory"></i>
+              {% elif item.component.category == 'ssd' %}<i class="bi bi-device-ssd"></i>
+              {% elif item.component.category == 'psu' %}<i class="bi bi-plug"></i>
+              {% elif item.component.category == 'cooling' %}<i class="bi bi-wind"></i>
+              {% elif item.component.category == 'case' %}<i class="bi bi-box"></i>
               {% else %}<i class="bi bi-puzzle"></i>
               {% endif %}
             </span>
             <span class="small text-secondary text-uppercase fw-semibold">
-              {{ component.get_category_display }}
+              {{ item.component.get_category_display }}
             </span>
           </div>
-          <div class="fw-semibold lh-sm" style="font-size:0.92rem;">{{ component.name }}</div>
+          <div class="fw-semibold lh-sm" style="font-size:0.92rem;">{{ item.component.name }}</div>
           <div class="mt-auto d-flex align-items-center justify-content-between">
             <div>
               <span class="fw-bold" style="color:var(--accent); font-size:1.05rem;">
-                {{ price|floatformat:0 }} ₽
+                {{ item.price|floatformat:0 }} ₽
               </span>
               <div class="text-secondary" style="font-size:0.7rem;">
                 <i class="bi bi-clock me-1"></i>цена от {{ item.price_date|date:"d.m.Y" }}
               </div>
             </div>
-            <a href="{{ component.url }}" target="_blank" rel="noopener"
+            <a href="{{ item.component.url }}" target="_blank" rel="noopener"
                class="btn btn-sm btn-outline-secondary py-0 px-2"
                style="font-size:0.78rem;">
               Купить <i class="bi bi-box-arrow-up-right ms-1"></i>
@@ -106,57 +104,119 @@
           </div>
         </div>
       </div>
-      {% endwith %}
       {% endfor %}
     </div>
 
     {% if fps %}
     <div class="content-shell mt-5">
 
-      <button class="btn btn-outline-primary fw-semibold mb-3"
-              type="button"
-              data-bs-toggle="collapse"
-              data-bs-target="#fpsCollapse"
-              aria-expanded="false"
-              aria-controls="fpsCollapse">
-        <i class="bi bi-graph-up-arrow me-1"></i>
-        Показать FPS в играх
-      </button>
-
-      <div class="collapse" id="fpsCollapse">
-        <div class="card card-body">
-
-          <h3 class="fw-bold mb-3">
-            <i class="bi bi-graph-up-arrow me-2" style="color:var(--accent);"></i>
-            FPS в играх
-          </h3>
-
-          <table class="table table-striped table-bordered">
-            <thead class="table-light">
-              <tr>
-                <th>Игра</th>
-                <th>Разрешение</th>
-                <th>FPS</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for row in fps %}
-              <tr>
-                <td>{{ row.game }}</td>
-                <td>{{ row.resolution }}</td>
-                <td>{{ row.fps_min }}–{{ row.fps_max }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-
-          <div class="small text-secondary mt-2">
-            <i class="bi bi-info-circle me-1"></i>
-            FPS может отличаться в пределах 5-10%
-          </div>
-
-        </div>
+      <!-- Заголовок + кнопка сворачивания -->
+      <div class="d-flex align-items-center justify-content-between mb-3 px-2">
+        <h3 class="fw-bold mb-0 fs-4">
+          <i class="bi bi-controller me-2" style="color:var(--accent);"></i>
+          Ожидаемый FPS в играх
+        </h3>
+        <button class="btn btn-sm btn-outline-primary fw-semibold"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#fpsCollapse"
+                aria-expanded="true"
+                aria-controls="fpsCollapse">
+          <i class="bi bi-chevron-expand me-1"></i>
+          Свернуть / Развернуть
+        </button>
       </div>
+
+      <div class="collapse show" id="fpsCollapse">
+
+        <!-- Строка поиска + легенда -->
+        <div class="d-flex flex-wrap align-items-center gap-3 mb-4 px-2">
+          <div class="position-relative flex-grow-1" style="max-width:340px;">
+            <i class="bi bi-search position-absolute text-secondary"
+               style="top:50%; left:12px; transform:translateY(-50%); font-size:0.85rem; pointer-events:none;"></i>
+            <input id="fps-search"
+                   type="text"
+                   class="form-control form-control-sm ps-4"
+                   placeholder="Поиск по игре…"
+                   autocomplete="off"
+                   style="background:rgba(255,255,255,0.05); border-color:rgba(255,255,255,0.12); color:inherit;">
+          </div>
+          <!-- Легенда цветов -->
+          <div class="d-flex align-items-center gap-3 small text-secondary flex-shrink-0">
+            <span>
+              <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#4ade80;margin-right:4px;"></span>
+              &gt; 90 FPS
+            </span>
+            <span>
+              <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#facc15;margin-right:4px;"></span>
+              55–90 FPS
+            </span>
+            <span>
+              <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f87171;margin-right:4px;"></span>
+              &lt; 55 FPS
+            </span>
+          </div>
+        </div>
+
+        <!-- Сетка карточек -->
+        <div class="row g-3" id="fps-grid">
+          {% for game_data in fps %}
+          <div class="col-sm-6 col-xl-4 fps-card-col" data-game="{{ game_data.game|lower }}">
+            <div class="main-card h-100 p-3 d-flex flex-column fps-game-card">
+              <!-- Название игры -->
+              <div class="fw-bold mb-3" style="font-size:0.95rem; line-height:1.3;">
+                <i class="bi bi-joystick me-2" style="color:var(--accent); opacity:0.8;"></i>
+                {{ game_data.game }}
+              </div>
+
+              <!-- Строки по разрешениям -->
+              <div class="d-flex flex-column gap-2 mt-auto">
+                {% for e in game_data.entries %}
+                <div>
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <div class="d-flex align-items-center gap-2">
+                      <span class="badge rounded-pill fw-semibold"
+                            style="font-size:0.68rem; background:rgba(255,255,255,0.08); color:{{ e.color }}; border:1px solid {{ e.color }};">
+                        {{ e.label }}
+                      </span>
+                      <span class="small text-secondary" style="font-size:0.72rem;">{{ e.preset }}</span>
+                    </div>
+                    <span class="fw-bold" style="color:{{ e.color }}; font-size:1rem; font-variant-numeric:tabular-nums;">
+                      {{ e.fps_display }}<span class="text-secondary fw-normal" style="font-size:0.7rem;"> FPS</span>
+                    </span>
+                  </div>
+                  <div class="progress rounded-pill" style="height:4px; background:rgba(255,255,255,0.07);">
+                    <div class="progress-bar rounded-pill"
+                         style="width:{{ e.bar_pct }}%; background:{{ e.color }}; transition:width 0.6s ease;"
+                         role="progressbar"
+                         aria-valuenow="{{ e.fps_min }}"
+                         aria-valuemin="0"
+                         aria-valuemax="240">
+                    </div>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Сообщение "ничего не найдено" -->
+        <div id="fps-empty" class="text-center py-5 text-secondary" style="display:none;">
+          <i class="bi bi-search fs-2 d-block mb-2 opacity-50"></i>
+          Игра не найдена — попробуйте другой запрос
+        </div>
+
+        <div class="alert alert-light border mt-4 mb-0 d-flex align-items-start gap-2 small text-secondary">
+          <i class="bi bi-info-circle-fill mt-1" style="color:var(--accent);"></i>
+          <div>
+            Показатели FPS являются приблизительными и могут отличаться на 5–10% в зависимости от
+            конкретных сцен в игре, настроек графики и фоновых процессов.
+          </div>
+        </div>
+
+      </div><!-- /#fpsCollapse -->
 
     </div>
     {% endif %}
@@ -165,13 +225,39 @@
       <i class="bi bi-exclamation-circle me-1"></i>
       Цены взяты из последнего парсинга и могут не совпадать с актуальными на сайте магазина.
       Перед покупкой проверяйте цену по ссылке. Итоговая стоимость по данным парсинга:
-      <strong style="color:var(--accent);">{{ total|floatformat:0 }} ₽</strong>
-      из {{ budget|floatformat:0 }} ₽ бюджета.
+      <strong style="color:var(--accent);">{{ build_total|floatformat:0 }} ₽</strong>
+      из {{ build_budget|floatformat:0 }} ₽ бюджета.
     </div>
 
   </div>
-  {% endwith %}
   {% endif %}
 
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{% if fps %}
+<script>
+(function () {
+  var input = document.getElementById('fps-search');
+  if (!input) return;
+  input.addEventListener('input', function () {
+    var query = this.value.toLowerCase().trim();
+    var words  = query.split(/\s+/).filter(Boolean);
+    var cols   = document.querySelectorAll('.fps-card-col');
+    var visible = 0;
+    cols.forEach(function (col) {
+      var name  = col.dataset.game || '';
+      var match = words.length === 0 || words.every(function (w) {
+        return name.indexOf(w) !== -1;
+      });
+      col.style.display = match ? '' : 'none';
+      if (match) visible++;
+    });
+    var empty = document.getElementById('fps-empty');
+    if (empty) empty.style.display = visible === 0 ? 'block' : 'none';
+  });
+})();
+</script>
+{% endif %}
 {% endblock %}
