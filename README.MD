@@ -40,11 +40,7 @@ pc_configurator/
 ├── run_citilink_parser		# Запуск парсера для Ситилинк
 ├── run_yandex...           # Запуск парсера для Яндекс Маркета
 ├── run_gpu_parser          # Запуск парсера для анализа фпс
-└── README.md                                  
-
-Важно, файлcd pc_configurator
-python manage.py migrate
-python manage.py runserver бд хранить на уровне coursework в папке data.        
+└── README.md                                        
 ```
 ---
 ###   -  Запуск через Docker
