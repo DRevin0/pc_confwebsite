@@ -63,7 +63,7 @@ cd pc_confwebsite
 ```
 2. **Установите зависимости**:
  ```bash
-pip install -r pc_configurator/requirements.txt
+pip install -r requirements.txt
 playwright install chromium
 playwright install-deps chromium   # для Linux
 ```
