@@ -48,13 +48,12 @@ class DjangoPipeline:
             price_clean = re.sub(r'[^\d]', '', price_str)
             if price_clean:
                 try:
-                    await sync_to_async(Price.objects.create)(
+                    await sync_to_async(Price.objects.update_or_create)(
                         component=component,
-                        price=Decimal(price_clean)
+                        defaults={'price': Decimal(price_clean)}
                     )
                 except Exception as e:
                     spider.logger.error(f"Ошибка цены '{price_str}': {e}")
-
         # Сохраняем характеристики
         exclude = {'name', 'price', 'category', 'url'}
         for key, value in item.items():

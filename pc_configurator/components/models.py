@@ -27,10 +27,11 @@ class Component(models.Model):
 class Price(models.Model):
     component = models.ForeignKey(Component, on_delete=models.CASCADE, related_name='prices')
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Цена')
-    recorded_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата записи')
+    recorded_at = models.DateTimeField(auto_now=True, verbose_name='Дата записи')
 
     class Meta:
         ordering = ['-recorded_at']
+        unique_together = ('component',)
 
 class Spec(models.Model):
     component = models.ForeignKey(Component, on_delete=models.CASCADE, related_name='specs')
