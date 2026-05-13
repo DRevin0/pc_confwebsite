@@ -2,7 +2,7 @@
 - Сервис подбора ПК по бюджету
 
 ## Статус проекта 
-- Ver 1.1
+- Ver 1.2
 ---
 ### Функционал
 - [x] Парсинг цен комплектующих
@@ -23,6 +23,7 @@
 ---
 ### Структура проекта
 ```text
+data/	                    # База данных
 pc_configurator/   
 ├── analyzer/               # Анализ фпс    
 ├── config/                 # Настройки Django     
@@ -41,8 +42,39 @@ pc_configurator/
 ├── run_gpu_parser          # Запуск парсера для анализа фпс
 └── README.md                                  
 
-Важно, файл бд хранить на уровне coursework в папке data.        
+Важно, файлcd pc_configurator
+python manage.py migrate
+python manage.py runserver бд хранить на уровне coursework в папке data.        
 ```
 ---
-
+###   -  Запуск через Docker
+1. **Клонируйте репозиторий** и перейдите в папку проекта:
+ ```bash
+git clone https://github.com/DRevin0/pc_confwebsite
+cd pc_confwebsite
+```
+2. **Запустите подготовленный скрипт**:
+ ```bash
+chmod +x deploy_and_enter.sh
+./deploy_and_enter.sh
+```
+3. **Скрипт** соберет образ, запустит контейнер, выполнит миграции и запустит сервер. 
+###    - Запуск локально
+1. **Клонируйте репозиторий** и перейдите в папку проекта:
+ ```bash
+git clone https://github.com/DRevin0/pc_confwebsite
+cd pc_confwebsite
+```
+2. **Установите зависимости**:
+ ```bash
+pip install -r pc_configurator/requirements.txt
+playwright install chromium
+playwright install-deps chromium   # для Linux
+```
+3. **Выполните миграции и запустите сервер** :
+ ```bash
+cd pc_configurator
+python manage.py migrate
+python manage.py runserver
+```
 
