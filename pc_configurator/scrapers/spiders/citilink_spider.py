@@ -14,7 +14,7 @@ class CitilinkSpider(BaseSpider):
     CATEGORY_KEYWORDS = category_config.CATEGORY_KEYWORDS_citilink
     FALLBACK_CATEGORY_MAP = category_config.FALLBACK_CATEGORY_MAP_citilink
     CATEGORY_DB_MAP = category_config.CATEGORY_DB_MAP_citilink
-    ITEMS_PER_CATEGORY = 40
+    ITEMS_PER_CATEGORY = 10
 
     def extract_product_links(self, response):
         links = response.css('a[data-meta-name="Snippet__title"]::attr(href)').getall()

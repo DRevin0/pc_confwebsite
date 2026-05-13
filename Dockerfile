@@ -17,17 +17,17 @@ RUN apt-get update && apt-get install -y \
     libxkbcommon-dev \
     libgbm-dev \
     libasound-dev \
-    libcups2 \ 
+    libcups2 \
     xvfb \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+COPY pc_configurator/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 RUN playwright install chromium
 RUN playwright install-deps chromium
 
-COPY . .
+COPY pc_configurator/ .
 
 RUN mkdir -p /usr/src/app/data /usr/src/app/static /usr/src/app/media
 
