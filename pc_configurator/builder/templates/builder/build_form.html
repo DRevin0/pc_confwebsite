@@ -5,7 +5,7 @@
 {% block content %}
 <div class="container py-5">
 
-  <div class="hero text-center mb-4">
+  <div class="hero text-center mb-4 fade-in-up">
     <span class="hero-badge mb-3">
       <i class="bi bi-cpu"></i> Подбор комплектующих
     </span>
@@ -17,21 +17,32 @@
 
   <div class="row justify-content-center mb-5">
     <div class="col-md-6">
-      <div class="main-card">
-        <form method="post" novalidate>
+      <div class="main-card fade-in-up" style="animation-delay: 0.2s;">
+        <form method="post" novalidate id="build-form">
           {% csrf_token %}
-          <div class="mb-3">
-            <label for="{{ form.budget.id_for_label }}" class="form-label fw-semibold">
+          <div class="mb-4">
+            <label for="{{ form.budget.id_for_label }}" class="form-label fw-semibold fs-5">
+              <i class="bi bi-wallet2 me-2 text-primary"></i>
               {{ form.budget.label }}
             </label>
             {{ form.budget }}
             {% if form.budget.errors %}
-              <div class="text-danger small mt-1">{{ form.budget.errors|join:", " }}</div>
+              <div class="text-danger small mt-2">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                {{ form.budget.errors|join:", " }}
+              </div>
             {% endif %}
-            <div class="form-text text-secondary">{{ form.budget.help_text }}</div>
+            <div class="form-text text-secondary mt-2">
+              <i class="bi bi-info-circle me-1"></i>
+              {{ form.budget.help_text }}
+            </div>
           </div>
-          <button type="submit" class="btn btn-primary w-100 fw-semibold">
-            <i class="bi bi-lightning-charge-fill me-1"></i> Подобрать сборку
+          <button type="submit" class="btn btn-primary w-100 fw-semibold btn-lg" id="submit-btn">
+            <i class="bi bi-lightning-charge-fill me-2"></i> 
+            <span id="submit-text">Подобрать сборку</span>
+            <span id="loading-spinner" class="spinner-border spinner-border-sm ms-2" style="display: none;" role="status">
+              <span class="visually-hidden">Загрузка...</span>
+            </span>
           </button>
         </form>
       </div>
@@ -50,7 +61,7 @@
   {% endif %}
 
   {% if build_items %}
-  <div class="content-shell">
+  <div class="content-shell fade-in-up" style="animation-delay: 0.3s;">
 
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 px-2">
       <div>
@@ -68,7 +79,7 @@
     <div class="row g-3">
       {% for item in build_items %}
       <div class="col-sm-6 col-lg-4 col-xl-3">
-        <div class="main-card h-100 d-flex flex-column gap-2">
+        <div class="main-card h-100 d-flex flex-column gap-2 component-card fade-in-up" style="animation-delay: 0.1s;">
           <div class="d-flex align-items-center gap-2 mb-1">
             <span class="icon-circle">
               {% if item.component.category == 'cpu' %}<i class="bi bi-cpu"></i>
@@ -86,10 +97,10 @@
               {{ item.component.get_category_display }}
             </span>
           </div>
-          <div class="fw-semibold lh-sm" style="font-size:0.92rem;">{{ item.component.name }}</div>
+          <div class="fw-semibold lh-sm component-name" style="font-size:0.92rem;">{{ item.component.name }}</div>
           <div class="mt-auto d-flex align-items-center justify-content-between">
             <div>
-              <span class="fw-bold" style="color:var(--accent); font-size:1.05rem;">
+              <span class="fw-bold component-price" style="color:var(--accent); font-size:1.05rem;">
                 {{ item.price|floatformat:0 }} ₽
               </span>
               <div class="text-secondary" style="font-size:0.7rem;">
@@ -167,7 +178,7 @@
               <div class="fw-bold mb-3" style="font-size:0.95rem; line-height:1.3;">
                 <i class="bi bi-joystick me-2" style="color:var(--accent); opacity:0.8;"></i>
                 {{ game_data.game }}
-              </div>
+              </div> 
 
               <!-- Строки по разрешениям -->
               <div class="d-flex flex-column gap-2 mt-auto">
@@ -176,22 +187,22 @@
                   <div class="d-flex justify-content-between align-items-center mb-1">
                     <div class="d-flex align-items-center gap-2">
                       <span class="badge rounded-pill fw-semibold"
-                            style="font-size:0.68rem; background:rgba(255,255,255,0.08); color:{{ e.color }}; border:1px solid {{ e.color }};">
+                            style="font-size:0.68rem; background:rgba(255,255,255,0.08); color:{{ e.color|safe }}; border:1px solid {{ e.color|safe }};">
                         {{ e.label }}
                       </span>
                       <span class="small text-secondary" style="font-size:0.72rem;">{{ e.preset }}</span>
                     </div>
-                    <span class="fw-bold" style="color:{{ e.color }}; font-size:1rem; font-variant-numeric:tabular-nums;">
+                    <span class="fw-bold" style="color:{{ e.color|safe }}; font-size:1rem; font-variant-numeric:tabular-nums;">
                       {{ e.fps_display }}<span class="text-secondary fw-normal" style="font-size:0.7rem;"> FPS</span>
                     </span>
                   </div>
                   <div class="progress rounded-pill" style="height:4px; background:rgba(255,255,255,0.07);">
                     <div class="progress-bar rounded-pill"
-                         style="width:{{ e.bar_pct }}%; background:{{ e.color }}; transition:width 0.6s ease;"
-                         role="progressbar"
-                         aria-valuenow="{{ e.fps_min }}"
-                         aria-valuemin="0"
-                         aria-valuemax="240">
+                        style="width:{{ e.bar_pct }}%; background:{{ e.color|safe }}; transition:width 0.6s ease;"
+                        role="progressbar"
+                        aria-valuenow="{{ e.fps_min }}"
+                        aria-valuemin="0"
+                        aria-valuemax="240">
                     </div>
                   </div>
                 </div>
@@ -236,28 +247,53 @@
 {% endblock %}
 
 {% block extra_js %}
-{% if fps %}
 <script>
 (function () {
-  var input = document.getElementById('fps-search');
-  if (!input) return;
-  input.addEventListener('input', function () {
-    var query = this.value.toLowerCase().trim();
-    var words  = query.split(/\s+/).filter(Boolean);
-    var cols   = document.querySelectorAll('.fps-card-col');
-    var visible = 0;
-    cols.forEach(function (col) {
-      var name  = col.dataset.game || '';
-      var match = words.length === 0 || words.every(function (w) {
-        return name.indexOf(w) !== -1;
-      });
-      col.style.display = match ? '' : 'none';
-      if (match) visible++;
+  var form = document.getElementById('build-form');
+  var submitBtn = document.getElementById('submit-btn');
+  var submitText = document.getElementById('submit-text');
+  var loadingSpinner = document.getElementById('loading-spinner');
+  
+  if (form && submitBtn) {
+    form.addEventListener('submit', function () {
+      submitBtn.disabled = true;
+      submitText.textContent = 'Подбираем сборку...';
+      loadingSpinner.style.display = 'inline-block';
+      submitBtn.classList.add('loading');
     });
-    var empty = document.getElementById('fps-empty');
-    if (empty) empty.style.display = visible === 0 ? 'block' : 'none';
+  }
+
+  {% if fps %}
+  var input = document.getElementById('fps-search');
+  if (input) {
+    input.addEventListener('input', function () {
+      var query = this.value.toLowerCase().trim();
+      var words  = query.split(/\s+/).filter(Boolean);
+      var cols   = document.querySelectorAll('.fps-card-col');
+      var visible = 0;
+      cols.forEach(function (col) {
+        var name  = col.dataset.game || '';
+        var match = words.length === 0 || words.every(function (w) {
+          return name.indexOf(w) !== -1;
+        });
+        col.style.display = match ? '' : 'none';
+        if (match) visible++;
+      });
+      var empty = document.getElementById('fps-empty');
+      if (empty) empty.style.display = visible === 0 ? 'block' : 'none';
+    });
+  }
+  {% endif %}
+
+  var componentCards = document.querySelectorAll('.component-card');
+  componentCards.forEach(function (card, index) {
+    card.style.animationDelay = (0.1 + index * 0.1) + 's';
+  });
+
+  var fpsCards = document.querySelectorAll('.fps-game-card');
+  fpsCards.forEach(function (card, index) {
+    card.style.animationDelay = (0.4 + index * 0.05) + 's';
   });
 })();
 </script>
-{% endif %}
 {% endblock %}
