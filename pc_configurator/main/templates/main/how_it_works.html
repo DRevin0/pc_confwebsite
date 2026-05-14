@@ -1,0 +1,122 @@
+{% extends "main/base.html" %}
+
+{% block title %}Как это работает{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="container">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-8">
+                <h1 class="hero-title fw-bold">Как работает подбор конфигурации</h1>
+                <p class="hero-subtitle mb-0">
+                    Сервис проходит несколько этапов: собирает данные о комплектующих, сохраняет цены,
+                    проверяет базовую совместимость и показывает пользователю итоговую сборку.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="container page-section pt-0">
+    <div class="content-shell mt-0">
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="d-flex gap-3 mb-4">
+                    <span class="step-number">1</span>
+                    <div>
+                        <h2 class="h5">Сбор данных</h2>
+                        <p class="text-secondary mb-0">
+                            Парсеры получают название товара, цену, ссылку и технические характеристики.
+                            Эти данные сохраняются в базе и используются при подборе.
+                        </p>
+                    </div>
+                </div>
+                <div class="d-flex gap-3 mb-4">
+                    <span class="step-number">2</span>
+                    <div>
+                        <h2 class="h5">Разделение по категориям</h2>
+                        <p class="text-secondary mb-0">
+                            Комплектующие относятся к категориям: процессоры, видеокарты, материнские платы,
+                            оперативная память, SSD, блоки питания, охлаждение и корпуса.
+                        </p>
+                    </div>
+                </div>
+                <div class="d-flex gap-3">
+                    <span class="step-number">3</span>
+                    <div>
+                        <h2 class="h5">Проверка характеристик</h2>
+                        <p class="text-secondary mb-0">
+                            Алгоритм сравнивает важные параметры, например сокет процессора и платы,
+                            а также тип оперативной памяти.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="d-flex gap-3 mb-4">
+                    <span class="step-number">4</span>
+                    <div>
+                        <h2 class="h5">Подбор под бюджет</h2>
+                        <p class="text-secondary mb-0">
+                            Введенная сумма распределяется между категориями. Сервис выбирает подходящие
+                            товары так, чтобы итоговая стоимость не превышала бюджет.
+                        </p>
+                    </div>
+                </div>
+                <div class="d-flex gap-3 mb-4">
+                    <span class="step-number">5</span>
+                    <div>
+                        <h2 class="h5">Оценка FPS</h2>
+                        <p class="text-secondary mb-0">
+                            По названию видеокарты находится информация о производительности в играх.
+                            Результат группируется по играм, разрешениям и настройкам графики.
+                        </p>
+                    </div>
+                </div>
+                <div class="d-flex gap-3">
+                    <span class="step-number">6</span>
+                    <div>
+                        <h2 class="h5">Вывод результата</h2>
+                        <p class="text-secondary mb-0">
+                            Пользователь видит список комплектующих, цены, ссылки на товары и предупреждение,
+                            что перед покупкой нужно проверить актуальность данных.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="container page-section pt-0">
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="main-card">
+                <span class="icon-circle mb-3"><i class="bi bi-database"></i></span>
+                <h3 class="h5">База данных</h3>
+                <p class="text-secondary mb-0">
+                    Хранит товары, историю цен, характеристики и записи FPS для дальнейшего анализа.
+                </p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="main-card">
+                <span class="icon-circle mb-3"><i class="bi bi-gear"></i></span>
+                <h3 class="h5">Логика подбора</h3>
+                <p class="text-secondary mb-0">
+                    Отвечает за выбор комплектующих, расчет суммы и проверку ключевых ограничений.
+                </p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="main-card">
+                <span class="icon-circle mb-3"><i class="bi bi-window-sidebar"></i></span>
+                <h3 class="h5">Интерфейс</h3>
+                <p class="text-secondary mb-0">
+                    Показывает форму бюджета, карточки комплектующих, FPS и пояснения для пользователя.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

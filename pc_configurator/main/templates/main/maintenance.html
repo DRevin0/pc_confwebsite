@@ -1,17 +1,77 @@
 {% extends "main/base.html" %}
-{% block title%}
-Сайт на обслуживании
-{% endblock%}
 
-{% block content%}
+{% block title %}Поддержка{% endblock %}
+
+{% block content %}
 <section class="hero">
-    <div class="container text-center">
-        <h1 class="hero-title fw-bold">Скоро вернемся!</h1>
-        
-        <p class="hero-subtitle mb-4 mx-auto" style="max-width: 600px;">
-            Мы проводим технические работы. Приносим извинения за неудобства. Попробуйте зайти позже.
-        </p>
+    <div class="container">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-6">
+                <h1 class="hero-title fw-bold">Поддержка проекта</h1>
+                <p class="hero-subtitle mb-4">
+                    Если возник вопрос по работе сайта, найден баг или данные в сборке выглядят странно,
+                    отправьте обращение через форму. Для учебного проекта это помогает фиксировать сценарии,
+                    которые нужно улучшить.
+                </p>
+                <ul class="info-list">
+                    <li><i class="bi bi-check-circle-fill"></i><span>Вопросы по подбору и результатам сборки.</span></li>
+                    <li><i class="bi bi-check-circle-fill"></i><span>Сообщения об ошибках в интерфейсе или данных.</span></li>
+                    <li><i class="bi bi-check-circle-fill"></i><span>Предложения по улучшению проекта.</span></li>
+                </ul>
+            </div>
+            <div class="col-lg-6">
+                <div class="main-card">
+                    {% if sent %}
+                        <div class="alert alert-success d-flex align-items-start gap-2" role="alert">
+                            <i class="bi bi-check-circle-fill mt-1"></i>
+                            <div>
+                                Обращение принято. В текущей версии проекта форма показывает успешную отправку,
+                                а подключение email или сохранение заявок можно добавить следующим этапом.
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.name.id_for_label }}" class="form-label">{{ form.name.label }}</label>
+                                {{ form.name }}
+                                {% if form.name.errors %}
+                                    <div class="text-danger small mt-1">{{ form.name.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.email.id_for_label }}" class="form-label">{{ form.email.label }}</label>
+                                {{ form.email }}
+                                {% if form.email.errors %}
+                                    <div class="text-danger small mt-1">{{ form.email.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-12">
+                                <label for="{{ form.topic.id_for_label }}" class="form-label">{{ form.topic.label }}</label>
+                                {{ form.topic }}
+                                {% if form.topic.errors %}
+                                    <div class="text-danger small mt-1">{{ form.topic.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-12">
+                                <label for="{{ form.message.id_for_label }}" class="form-label">{{ form.message.label }}</label>
+                                {{ form.message }}
+                                {% if form.message.errors %}
+                                    <div class="text-danger small mt-1">{{ form.message.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary fw-semibold w-100">
+                                    <i class="bi bi-send me-2"></i>Отправить обращение
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 </section>
-{% endblock%}
-
+{% endblock %}

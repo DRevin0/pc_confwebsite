@@ -1,8 +1,82 @@
 {% extends "main/base.html" %}
-{% block title%}
-Страница о нас
-{% endblock%}
 
-{% block content%}
-    <h1>Кто мы?</h1>
-{% endblock%}
+{% block title %}О проекте{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="container">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-8">
+                <h1 class="hero-title fw-bold">О проекте PC Configurator</h1>
+                <p class="hero-subtitle mb-0">
+                    Это учебный проект для демонстрации веб-сервиса, который собирает данные о комплектующих,
+                    хранит их в базе и помогает пользователю подобрать примерную конфигурацию ПК под бюджет.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="container page-section pt-0">
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="content-shell mt-0">
+                <span class="section-kicker">Задача проекта</span>
+                <h2 class="h3 mt-2">Сделать подбор ПК более понятным</h2>
+                <p class="muted-copy">
+                    При самостоятельной сборке компьютера нужно учитывать цену, совместимость, назначение
+                    комплектующих и ожидаемую производительность. Проект объединяет эти этапы в один сценарий:
+                    пользователь вводит бюджет и получает готовый вариант сборки.
+                </p>
+                <p class="muted-copy mb-0">
+                    Сервис не заменяет консультацию специалиста перед покупкой, но показывает принцип работы
+                    автоматизированного подбора и помогает быстрее ориентироваться в доступных вариантах.
+                </p>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="main-card">
+                <h3 class="h5 mb-3">Что реализовано</h3>
+                <ul class="info-list">
+                    <li><i class="bi bi-database-check"></i><span>Модели комплектующих, цен и характеристик.</span></li>
+                    <li><i class="bi bi-search"></i><span>Парсеры для получения данных из интернет-магазинов.</span></li>
+                    <li><i class="bi bi-pc-display-horizontal"></i><span>Алгоритм формирования сборки под заданный бюджет.</span></li>
+                    <li><i class="bi bi-bar-chart-line"></i><span>Вывод примерного FPS для выбранной видеокарты.</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="container page-section pt-0">
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="main-card">
+                <span class="icon-circle mb-3"><i class="bi bi-code-slash"></i></span>
+                <h3 class="h5">Backend</h3>
+                <p class="text-secondary mb-0">
+                    Django отвечает за маршруты, шаблоны, формы, модели и работу с базой данных.
+                </p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="main-card">
+                <span class="icon-circle mb-3"><i class="bi bi-cloud-download"></i></span>
+                <h3 class="h5">Парсинг</h3>
+                <p class="text-secondary mb-0">
+                    Scrapy и Playwright используются для сбора цен и технических характеристик товаров.
+                </p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="main-card">
+                <span class="icon-circle mb-3"><i class="bi bi-layout-text-window"></i></span>
+                <h3 class="h5">Интерфейс</h3>
+                <p class="text-secondary mb-0">
+                    Bootstrap и Django templates формируют страницы сервиса и вывод результатов подбора.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

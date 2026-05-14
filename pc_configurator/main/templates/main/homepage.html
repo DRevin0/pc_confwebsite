@@ -1,51 +1,115 @@
 {% extends "main/base.html" %}
-{% block title%}
-Главная страница
-{% endblock%}
-{% block content%}
+
+{% block title %}PC Configurator - подбор ПК по бюджету{% endblock %}
+
+{% block content %}
 <section class="hero">
-            <div class="container">
-                <span class="hero-badge">
-                    Быстрый подбор комплектующих
-                </span>
-                <h1 class="hero-title fw-bold">Собери ПК под задачи, бюджет и реальные цены</h1>
+    <div class="container">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-7">
+                <h1 class="hero-title fw-bold">Собери ПК под бюджет без ручного сравнения десятков комплектующих</h1>
                 <p class="hero-subtitle mb-4">
-                    Сюда что то дописать.
+                    PC Configurator помогает подобрать совместимые комплектующие, посчитать итоговую стоимость
+                    и посмотреть примерный FPS в играх на выбранной видеокарте.
                 </p>
                 <div class="d-flex flex-wrap gap-2">
-                    <a href="/builder/" class="btn btn-info fw-semibold">Создать сборку</a>
-                    <a href="#" class="btn btn-outline-light">Как это работает</a>
+                    <a href="/builder/" class="btn btn-primary fw-semibold">
+                        <i class="bi bi-lightning-charge-fill me-2"></i>Создать сборку
+                    </a>
+                    <a href="/how-it-works/" class="btn btn-outline-light">
+                        <i class="bi bi-diagram-3 me-2"></i>Как это работает
+                    </a>
                 </div>
             </div>
-        </section>
+            <div class="col-lg-5">
+                <div class="main-card">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <span class="icon-circle"><i class="bi bi-cpu"></i></span>
+                        <div>
+                            <div class="fw-semibold">Что делает сервис</div>
+                            <div class="small text-secondary">Подбор, проверка и расчет результата</div>
+                        </div>
+                    </div>
+                    <ul class="info-list">
+                        <li><i class="bi bi-check-circle-fill"></i><span>Собирает конфигурацию из базы комплектующих и последних цен.</span></li>
+                        <li><i class="bi bi-check-circle-fill"></i><span>Учитывает основные правила совместимости процессора, платы и памяти.</span></li>
+                        <li><i class="bi bi-check-circle-fill"></i><span>Показывает прогноз FPS, если для видеокарты есть данные производительности.</span></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 
-        <section class="container pb-2">
-            <div class="row g-3 justify-content-center features-row">
-                <div class="col-12 col-md-6 col-lg-4">
-                    <article class="main-card">
-                        <h5>Умный подбор комплектующих</h5>
-                        <!-- надо бы написать что то -->
-                        <p class="text-secondary mb-0">...</p>
-                    </article>
-                </div>
-                <div class="col-12 col-md-6 col-lg-4">
-                    <article class="main-card">
-                        <h5>Прогноз производительности в актуальных приложениях</h5>
-                        <p class="text-secondary mb-0">...</p>
-                    </article>
-                </div>
-                <div class="col-12 col-md-6 col-lg-4">
-                    <article class="main-card">
-                        <h5>Поддержка</h5>
-                        <p class="text-secondary mb-0">...</p>
-                    </article>
-                </div>
-            </div>
-        </section>
+<section class="container page-section">
+    <div class="row g-3 justify-content-center features-row">
+        <div class="col-12 col-md-6 col-lg-4">
+            <article class="main-card">
+                <span class="icon-circle mb-3"><i class="bi bi-wallet2"></i></span>
+                <h5>Подбор по бюджету</h5>
+                <p class="text-secondary mb-0">
+                    Пользователь вводит сумму, а алгоритм распределяет бюджет между основными категориями:
+                    процессор, видеокарта, плата, память, накопитель и блок питания.
+                </p>
+            </article>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+            <article class="main-card">
+                <span class="icon-circle mb-3"><i class="bi bi-shield-check"></i></span>
+                <h5>Базовая совместимость</h5>
+                <p class="text-secondary mb-0">
+                    Сервис сравнивает характеристики комплектующих, чтобы не предложить очевидно неподходящую
+                    пару процессора, материнской платы и оперативной памяти.
+                </p>
+            </article>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+            <article class="main-card">
+                <span class="icon-circle mb-3"><i class="bi bi-controller"></i></span>
+                <h5>Прогноз FPS</h5>
+                <p class="text-secondary mb-0">
+                    Для выбранной видеокарты выводятся примерные показатели производительности в разных играх,
+                    разрешениях и пресетах графики.
+                </p>
+            </article>
+        </div>
+    </div>
+</section>
 
-        <section class="container">
-            <div class="content-shell">
-                <h2 class="h3">Контентная область(smt about)</h2>
+<section class="container page-section pt-0">
+    <div class="content-shell">
+        <div class="row g-4 align-items-center">
+            <div class="col-lg-7">
+                <span class="section-kicker">Учебный проект</span>
+                <h2 class="h3 mt-2">Проект показывает полный цикл работы с данными</h2>
+                <p class="muted-copy mb-0">
+                    Внутри используются Django-модели, Scrapy-парсеры, сохранение цен и характеристик,
+                    логика подбора конфигурации и отдельный модуль анализа FPS. Такой формат удобен для
+                    курсовой работы: можно показать не только интерфейс, но и backend-логику.
+                </p>
             </div>
-        </section>
+            <div class="col-lg-5">
+                <div class="row g-2">
+                    <div class="col-6">
+                        <div class="main-card text-center">
+                            <div class="fs-3 fw-bold" style="color:var(--accent);">8</div>
+                            <div class="small text-secondary">категорий комплектующих</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="main-card text-center">
+                            <div class="fs-3 fw-bold" style="color:var(--accent-2);">3</div>
+                            <div class="small text-secondary">источника цен</div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <a href="/about/" class="btn btn-outline-light w-100">
+                            Подробнее о проекте
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 {% endblock %}
