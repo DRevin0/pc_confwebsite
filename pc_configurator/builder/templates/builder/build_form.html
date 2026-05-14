@@ -119,116 +119,175 @@
     </div>
 
     {% if fps %}
-    <div class="content-shell mt-5">
-
-      <!-- Заголовок + кнопка сворачивания -->
-      <div class="d-flex align-items-center justify-content-between mb-3 px-2">
-        <h3 class="fw-bold mb-0 fs-4">
-          <i class="bi bi-controller me-2" style="color:var(--accent);"></i>
-          Ожидаемый FPS в играх
-        </h3>
-        <button class="btn btn-sm btn-outline-primary fw-semibold"
-                type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#fpsCollapse"
-                aria-expanded="true"
-                aria-controls="fpsCollapse">
-          <i class="bi bi-chevron-expand me-1"></i>
-          Свернуть / Развернуть
-        </button>
+    <div class="fps-report mt-5">
+      <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
+        <div>
+          <span class="section-kicker">Производительность</span>
+          <h3 class="fw-bold mb-2 fs-4">
+            <i class="bi bi-controller me-2" style="color:var(--accent);"></i>
+            FPS в играх
+          </h3>
+          <p class="text-secondary mb-0">
+            Данные сгруппированы по разрешению и пресетам графики, чтобы быстро оценить комфорт игры.
+          </p>
+        </div>
+        <div class="fps-summary-card">
+          <div class="small text-secondary">Лучшая сводка</div>
+          <div class="d-flex align-items-end gap-2">
+            <span class="fps-summary-number">
+              {% if fps.summary.avg_fps %}{{ fps.summary.avg_fps }}{% else %}—{% endif %}
+            </span>
+            <span class="text-secondary mb-2">FPS</span>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="fps-status fps-status-{{ fps.summary.status.class }}">
+              {{ fps.summary.status.label }}
+            </span>
+            <span class="small text-secondary">{{ fps.summary.best_resolution }}</span>
+          </div>
+        </div>
       </div>
 
-      <div class="collapse show" id="fpsCollapse">
-
-        <!-- Строка поиска + легенда -->
-        <div class="d-flex flex-wrap align-items-center gap-3 mb-4 px-2">
-          <div class="position-relative flex-grow-1" style="max-width:340px;">
-            <i class="bi bi-search position-absolute text-secondary"
-               style="top:50%; left:12px; transform:translateY(-50%); font-size:0.85rem; pointer-events:none;"></i>
-            <input id="fps-search"
-                   type="text"
-                   class="form-control form-control-sm ps-4"
-                   placeholder="Поиск по игре…"
-                   autocomplete="off"
-                   style="background:rgba(255,255,255,0.05); border-color:rgba(255,255,255,0.12); color:inherit;">
-          </div>
-          <!-- Легенда цветов -->
-          <div class="d-flex align-items-center gap-3 small text-secondary flex-shrink-0">
-            <span>
-              <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#4ade80;margin-right:4px;"></span>
-              &gt; 90 FPS
-            </span>
-            <span>
-              <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#facc15;margin-right:4px;"></span>
-              55–90 FPS
-            </span>
-            <span>
-              <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f87171;margin-right:4px;"></span>
-              &lt; 55 FPS
-            </span>
+      <div class="row g-3 mb-4">
+        <div class="col-md-4">
+          <div class="fps-metric">
+            <div class="small text-secondary">Игр в отчете</div>
+            <div class="fw-bold fs-4">{{ fps.summary.game_count }}</div>
           </div>
         </div>
+        <div class="col-md-4">
+          <div class="fps-metric">
+            <div class="small text-secondary">Замеров FPS</div>
+            <div class="fw-bold fs-4">{{ fps.summary.sample_count }}</div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="fps-metric">
+            <div class="small text-secondary">Оценка</div>
+            <div class="fw-bold fs-5">{{ fps.summary.status.label }}</div>
+          </div>
+        </div>
+      </div>
 
-        <!-- Сетка карточек -->
-        <div class="row g-3" id="fps-grid">
-          {% for game_data in fps %}
-          <div class="col-sm-6 col-xl-4 fps-card-col" data-game="{{ game_data.game|lower }}">
-            <div class="main-card h-100 p-3 d-flex flex-column fps-game-card">
-              <!-- Название игры -->
-              <div class="fw-bold mb-3" style="font-size:0.95rem; line-height:1.3;">
-                <i class="bi bi-joystick me-2" style="color:var(--accent); opacity:0.8;"></i>
-                {{ game_data.game }}
-              </div> 
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+        <ul class="nav fps-tabs" id="fpsTabs" role="tablist">
+          {% for tab in fps.tabs %}
+          <li class="nav-item" role="presentation">
+            <button class="fps-tab {% if forloop.first %}active{% endif %}"
+                    id="fps-tab-{{ tab.key }}"
+                    data-bs-toggle="tab"
+                    data-bs-target="#fps-panel-{{ tab.key }}"
+                    type="button"
+                    role="tab"
+                    aria-controls="fps-panel-{{ tab.key }}"
+                    aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">
+              <span>{{ tab.label }}</span>
+              <small>{{ tab.hint }}</small>
+            </button>
+          </li>
+          {% endfor %}
+        </ul>
 
-              <!-- Строки по разрешениям -->
-              <div class="d-flex flex-column gap-2 mt-auto">
-                {% for e in game_data.entries %}
-                <div>
-                  <div class="d-flex justify-content-between align-items-center mb-1">
-                    <div class="d-flex align-items-center gap-2">
-                      <span class="badge rounded-pill fw-semibold"
-                            style="font-size:0.68rem; background:rgba(255,255,255,0.08); color:{{ e.color|safe }}; border:1px solid {{ e.color|safe }};">
-                        {{ e.label }}
-                      </span>
-                      <span class="small text-secondary" style="font-size:0.72rem;">{{ e.preset }}</span>
-                    </div>
-                    <span class="fw-bold" style="color:{{ e.color|safe }}; font-size:1rem; font-variant-numeric:tabular-nums;">
-                      {{ e.fps_display }}<span class="text-secondary fw-normal" style="font-size:0.7rem;"> FPS</span>
-                    </span>
-                  </div>
-                  <div class="progress rounded-pill" style="height:4px; background:rgba(255,255,255,0.07);">
-                    <div class="progress-bar rounded-pill"
-                        style="width:{{ e.bar_pct }}%; background:{{ e.color|safe }}; transition:width 0.6s ease;"
-                        role="progressbar"
-                        aria-valuenow="{{ e.fps_min }}"
-                        aria-valuemin="0"
-                        aria-valuemax="240">
-                    </div>
-                  </div>
+        <div class="position-relative flex-grow-1" style="max-width:320px;">
+          <i class="bi bi-search position-absolute text-secondary"
+             style="top:50%; left:12px; transform:translateY(-50%); font-size:0.85rem; pointer-events:none;"></i>
+          <input id="fps-search"
+                 type="text"
+                 class="form-control form-control-sm ps-5"
+                 placeholder="Поиск по игре…"
+                 autocomplete="off">
+        </div>
+      </div>
+
+      <div class="tab-content" id="fpsTabsContent">
+        {% for tab in fps.tabs %}
+        <div class="tab-pane fade {% if forloop.first %}show active{% endif %}"
+             id="fps-panel-{{ tab.key }}"
+             role="tabpanel"
+             aria-labelledby="fps-tab-{{ tab.key }}"
+             tabindex="0">
+          <div class="fps-table-shell">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+              <div>
+                <h4 class="h6 mb-1">{{ tab.label }} · {{ tab.hint }}</h4>
+                <div class="small text-secondary">
+                  {% if tab.avg_high %}
+                    Средний High: {{ tab.avg_high }} FPS
+                  {% elif tab.avg_all %}
+                    Средний FPS: {{ tab.avg_all }}
+                  {% else %}
+                    Нет данных по этому разрешению
+                  {% endif %}
                 </div>
-                {% endfor %}
               </div>
+              <span class="fps-status fps-status-{{ tab.status.class }}">{{ tab.status.label }}</span>
+            </div>
+
+            {% if tab.rows %}
+            <div class="table-responsive">
+              <table class="table fps-table align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th scope="col">Игра</th>
+                    <th scope="col" class="text-end">Low</th>
+                    <th scope="col" class="text-end">Medium</th>
+                    <th scope="col" class="text-end">High</th>
+                    <th scope="col" class="text-end">Ultra</th>
+                    <th scope="col" class="text-end">Epic</th>
+                    <th scope="col" class="text-end">Итог</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for row in tab.rows %}
+                  <tr class="fps-table-row" data-game="{{ row.game_search }}">
+                    <td>
+                      <span class="fw-semibold">{{ row.game }}</span>
+                    </td>
+                    {% for preset, value in row.presets.items %}
+                    <td class="text-end">
+                      {% if value %}
+                        <span class="fps-value fps-value-{{ value.class }}">
+                          {{ value.display }}
+                        </span>
+                      {% else %}
+                        <span class="text-secondary">—</span>
+                      {% endif %}
+                    </td>
+                    {% endfor %}
+                    <td class="text-end">
+                      <span class="fps-status fps-status-{{ row.status.class }}">
+                        {{ row.status.label }}
+                      </span>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5 text-secondary">
+              <i class="bi bi-bar-chart fs-2 d-block mb-2 opacity-50"></i>
+              Для этого разрешения пока нет данных.
+            </div>
+            {% endif %}
+          <div>
+            <div class="fps-empty text-center py-4 text-secondary" style="display:none;">
+              <i class="bi bi-search fs-2 d-block mb-2 opacity-50"></i>
+              Игра не найдена — попробуйте другой запрос
             </div>
           </div>
-          {% endfor %}
         </div>
-
-        <!-- Сообщение "ничего не найдено" -->
-        <div id="fps-empty" class="text-center py-5 text-secondary" style="display:none;">
-          <i class="bi bi-search fs-2 d-block mb-2 opacity-50"></i>
-          Игра не найдена — попробуйте другой запрос
         </div>
+        {% endfor %}
+      </div>
 
-        <div class="alert alert-light border mt-4 mb-0 d-flex align-items-start gap-2 small text-secondary">
-          <i class="bi bi-info-circle-fill mt-1" style="color:var(--accent);"></i>
-          <div>
-            Показатели FPS являются приблизительными и могут отличаться на 5–10% в зависимости от
-            конкретных сцен в игре, настроек графики и фоновых процессов.
-          </div>
+      <div class="alert fps-note mt-4 mb-0 d-flex align-items-start gap-2 small">
+        <i class="bi bi-info-circle-fill mt-1" style="color:var(--accent);"></i>
+        <div>
+          Показатели FPS являются приблизительными и могут отличаться на 5–10% в зависимости от
+          конкретных сцен в игре, настроек графики и фоновых процессов.
         </div>
-
-      </div><!-- /#fpsCollapse -->
-
+      </div>
     </div>
     {% endif %}
 
@@ -269,30 +328,35 @@
     input.addEventListener('input', function () {
       var query = this.value.toLowerCase().trim();
       var words  = query.split(/\s+/).filter(Boolean);
-      var cols   = document.querySelectorAll('.fps-card-col');
-      var visible = 0;
-      cols.forEach(function (col) {
-        var name  = col.dataset.game || '';
-        var match = words.length === 0 || words.every(function (w) {
-          return name.indexOf(w) !== -1;
+      var panels = document.querySelectorAll('.tab-pane');
+      panels.forEach(function (panel) {
+        var rows = panel.querySelectorAll('.fps-table-row');
+        var visible = 0;
+        rows.forEach(function (row) {
+          var name  = row.dataset.game || '';
+          var match = words.length === 0 || words.every(function (w) {
+            return name.indexOf(w) !== -1;
+          });
+          row.style.display = match ? '' : 'none';
+          if (match) visible++;
         });
-        col.style.display = match ? '' : 'none';
-        if (match) visible++;
+        var empty = panel.querySelector('.fps-empty');
+        if (empty && rows.length) empty.style.display = visible === 0 ? 'block' : 'none';
       });
-      var empty = document.getElementById('fps-empty');
-      if (empty) empty.style.display = visible === 0 ? 'block' : 'none';
     });
   }
+
+  var fpsTabs = document.querySelectorAll('.fps-tab');
+  fpsTabs.forEach(function (tab) {
+    tab.addEventListener('shown.bs.tab', function () {
+      if (input) input.dispatchEvent(new Event('input'));
+    });
+  });
   {% endif %}
 
   var componentCards = document.querySelectorAll('.component-card');
   componentCards.forEach(function (card, index) {
     card.style.animationDelay = (0.1 + index * 0.1) + 's';
-  });
-
-  var fpsCards = document.querySelectorAll('.fps-game-card');
-  fpsCards.forEach(function (card, index) {
-    card.style.animationDelay = (0.4 + index * 0.05) + 's';
   });
 })();
 </script>

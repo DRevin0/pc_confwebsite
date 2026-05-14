@@ -5,29 +5,21 @@ from analyzer.services import get_fps_for_gpu
 from analyzer.utils import normalize_gpu_name
 from collections import defaultdict
 
-RESOLUTION_LABELS = {
-    "fullhdlow": {"label": "1080p", "preset": "Low", "color": "#4ade80"},
-    "fullhdmedium": {"label": "1080p", "preset": "Medium", "color": "#facc15"},
-    "fullhdhigh": {"label": "1080p", "preset": "High", "color": "#f87171"},
-    "2klow": {"label": "1440p", "preset": "Low", "color": "#4ade80"},
-    "2kmedium": {"label": "1440p", "preset": "Medium", "color": "#facc15"},
-    "2khigh": {"label": "1440p", "preset": "High", "color": "#f87171"},
-    "4klow": {"label": "4K", "preset": "Low", "color": "#4ade80"},
-    "4kmedium": {"label": "4K", "preset": "Medium", "color": "#facc15"},
-    "4khigh": {"label": "4K", "preset": "High", "color": "#f87171"},
-}
-
-RESOLUTION_ORDER = [
-    "fullhdlow",
-    "fullhdmedium",
-    "fullhdhigh",
-    "2klow",
-    "2kmedium",
-    "2khigh",
-    "4klow",
-    "4kmedium",
-    "4khigh",
+RESOLUTION_TABS = [
+    {"key": "1080p", "label": "1080p", "hint": "Full HD"},
+    {"key": "1440p", "label": "1440p", "hint": "2K"},
+    {"key": "4k", "label": "4K", "hint": "Ultra HD"},
 ]
+
+PRESET_ORDER = ["low", "medium", "high", "ultra", "epic"]
+PRESET_LABELS = {
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High",
+    "ultra": "Ultra",
+    "epic": "Epic",
+}
+PRESET_PRIORITY = {preset: index for index, preset in enumerate(PRESET_ORDER)}
 
 
 class BudgetForm(forms.Form):
@@ -43,57 +35,153 @@ class BudgetForm(forms.Form):
     )
 
 
-def _fps_color(fps_min: int) -> str:
-    """Цвет по значению FPS: красный < 55, жёлтый 55–90, зелёный > 90."""
+def _fps_level(fps_min: int) -> dict:
     if fps_min < 55:
-        return "#f87171"  # red
-    elif fps_min <= 90:
-        return "#facc15"  # yellow
+        return {"label": "Тяжело", "class": "danger", "color": "#f87171"}
+    if fps_min <= 90:
+        return {"label": "Играбельно", "class": "warning", "color": "#facc15"}
+    return {"label": "Комфортно", "class": "success", "color": "#4ade80"}
+
+
+def _fps_display(fps_min: int, fps_max: int) -> str:
+    if fps_min == fps_max:
+        return str(fps_min)
+    return f"{fps_min}–{fps_max}"
+
+
+def _parse_resolution(raw_resolution: str) -> tuple[str | None, str | None]:
+    raw = (raw_resolution or "").lower().replace("_", "").replace("-", "")
+
+    if raw.startswith("fullhd") or raw.startswith("1080"):
+        resolution = "1080p"
+        preset = raw.replace("fullhd", "").replace("1080p", "").replace("1080", "")
+    elif raw.startswith("2k") or raw.startswith("1440"):
+        resolution = "1440p"
+        preset = raw.replace("2k", "").replace("1440p", "").replace("1440", "")
+    elif raw.startswith("4k") or raw.startswith("2160"):
+        resolution = "4k"
+        preset = raw.replace("4k", "").replace("2160p", "").replace("2160", "")
     else:
-        return "#4ade80"  # green
+        return None, None
+
+    return resolution, preset if preset in PRESET_ORDER else None
 
 
-def _group_fps(fps_list):
-    """Группируем FPS по названию игры, добавляем красивые метки разрешений."""
-    by_game = defaultdict(list)
+def _row_status(row: dict) -> dict:
+    values = [
+        preset_data["fps_min"]
+        for preset_data in row["presets"].values()
+        if preset_data is not None
+    ]
+    if not values:
+        return {"label": "Нет данных", "class": "muted", "color": "#94a3b8"}
+    return _fps_level(min(values))
+
+
+def _average(values: list[int]) -> int | None:
+    if not values:
+        return None
+    return round(sum(values) / len(values))
+
+
+def _build_fps_report(fps_list):
+    by_resolution = {
+        tab["key"]: {
+            **tab,
+            "rows": [],
+            "avg_high": None,
+            "avg_all": None,
+            "status": {"label": "Нет данных", "class": "muted", "color": "#94a3b8"},
+        }
+        for tab in RESOLUTION_TABS
+    }
+    grouped = defaultdict(lambda: defaultdict(dict))
+    all_values = []
+
     for row in fps_list:
-        meta = RESOLUTION_LABELS.get(
-            row.resolution, {"label": row.resolution, "preset": "", "color": "#94a3b8"}
+        resolution, preset = _parse_resolution(row.resolution)
+        if not resolution or not preset:
+            continue
+
+        level = _fps_level(row.fps_min)
+        grouped[resolution][row.game][preset] = {
+            "fps_min": row.fps_min,
+            "fps_max": row.fps_max,
+            "display": _fps_display(row.fps_min, row.fps_max),
+            "class": level["class"],
+            "color": level["color"],
+        }
+        all_values.append(row.fps_min)
+
+    for resolution, games in grouped.items():
+        rows = []
+        high_values = []
+        resolution_values = []
+
+        for game, presets in sorted(games.items()):
+            ordered_presets = {preset: presets.get(preset) for preset in PRESET_ORDER}
+            row_values = [
+                value["fps_min"] for value in ordered_presets.values() if value
+            ]
+            resolution_values.extend(row_values)
+            if presets.get("high"):
+                high_values.append(presets["high"]["fps_min"])
+
+            table_row = {
+                "game": game,
+                "game_search": game.lower(),
+                "presets": ordered_presets,
+            }
+            table_row["status"] = _row_status(table_row)
+            rows.append(table_row)
+
+        rows.sort(
+            key=lambda item: (
+                PRESET_PRIORITY.get("high", 0),
+                item["status"]["label"],
+                item["game"],
+            )
         )
-        color = _fps_color(row.fps_min)
-        by_game[row.game].append(
+
+        avg_high = _average(high_values)
+        avg_all = _average(resolution_values)
+        status_value = avg_high if avg_high is not None else avg_all
+        by_resolution[resolution].update(
             {
-                "resolution_raw": row.resolution,
-                "label": meta["label"],
-                "preset": meta["preset"],
-                "color": color,
-                "fps_min": row.fps_min,
-                "fps_max": row.fps_max,
-                "fps_display": (
-                    str(row.fps_min)
-                    if row.fps_min == row.fps_max
-                    else f"{row.fps_min} – {row.fps_max}"
+                "rows": rows,
+                "avg_high": avg_high,
+                "avg_all": avg_all,
+                "status": (
+                    _fps_level(status_value)
+                    if status_value is not None
+                    else by_resolution[resolution]["status"]
                 ),
-                "bar_pct": min(100, int(row.fps_min / 2.4)),  # 240 fps = 100%
             }
         )
 
-    result = []
-    for game, entries in by_game.items():
-        entries.sort(
-            key=lambda e: (
-                RESOLUTION_ORDER.index(e["resolution_raw"])
-                if e["resolution_raw"] in RESOLUTION_ORDER
-                else 99
-            )
-        )
-        result.append({"game": game, "entries": entries})
-    return result
+    best_tab = max(
+        by_resolution.values(),
+        key=lambda tab: tab["avg_high"] or tab["avg_all"] or 0,
+    )
+    summary_avg = best_tab["avg_high"] or best_tab["avg_all"]
+
+    return {
+        "tabs": list(by_resolution.values()),
+        "preset_labels": [PRESET_LABELS[preset] for preset in PRESET_ORDER],
+        "preset_keys": PRESET_ORDER,
+        "summary": {
+            "game_count": len({row.game for row in fps_list}),
+            "sample_count": len(all_values),
+            "best_resolution": best_tab["label"],
+            "avg_fps": summary_avg,
+            "status": best_tab["status"],
+        },
+    }
 
 
 def build_view(request):
     build = None
-    fps_grouped = None
+    fps_report = None
     error_message = None
 
     if request.method == "POST":
@@ -113,7 +201,7 @@ def build_view(request):
                 gpu_name = normalize_gpu_name(gpu_item["component"].name)
                 fps_raw = get_fps_for_gpu(gpu_name)
                 if fps_raw:
-                    fps_grouped = _group_fps(fps_raw)
+                    fps_report = _build_fps_report(fps_raw)
 
     else:
         form = BudgetForm()
@@ -132,7 +220,7 @@ def build_view(request):
             "build_items": build_items,
             "build_total": build_total,
             "build_budget": build_budget,
-            "fps": fps_grouped,
+            "fps": fps_report,
             "error_message": error_message,
         },
     )
