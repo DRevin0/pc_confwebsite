@@ -7,25 +7,52 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='SupportRequest',
+            name="SupportRequest",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=80, verbose_name='Имя')),
-                ('email', models.EmailField(max_length=254, verbose_name='Email')),
-                ('topic', models.CharField(choices=[('question', 'Вопрос по работе сайта'), ('bug', 'Нашел ошибку'), ('data', 'Проблема с ценами или характеристиками'), ('other', 'Другое')], max_length=20, verbose_name='Тема')),
-                ('message', models.TextField(verbose_name='Сообщение')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Дата обращения')),
-                ('is_processed', models.BooleanField(default=False, verbose_name='Обработано')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=80, verbose_name="Имя")),
+                ("email", models.EmailField(max_length=254, verbose_name="Email")),
+                (
+                    "topic",
+                    models.CharField(
+                        choices=[
+                            ("question", "Вопрос по работе сайта"),
+                            ("bug", "Нашел ошибку"),
+                            ("data", "Проблема с ценами или характеристиками"),
+                            ("other", "Другое"),
+                        ],
+                        max_length=20,
+                        verbose_name="Тема",
+                    ),
+                ),
+                ("message", models.TextField(verbose_name="Сообщение")),
+                (
+                    "created_at",
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="Дата обращения"
+                    ),
+                ),
+                (
+                    "is_processed",
+                    models.BooleanField(default=False, verbose_name="Обработано"),
+                ),
             ],
             options={
-                'verbose_name': 'Обращение в поддержку',
-                'verbose_name_plural': 'Обращения в поддержку',
-                'ordering': ['-created_at'],
+                "verbose_name": "Обращение в поддержку",
+                "verbose_name_plural": "Обращения в поддержку",
+                "ordering": ["-created_at"],
             },
         ),
     ]

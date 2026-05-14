@@ -4,11 +4,13 @@ from urllib.parse import urljoin
 from scrapy_playwright.page import PageMethod
 from ..utils.category import category_config
 from .base_spider import BaseSpider
-class CitilinkSpider(BaseSpider):
-    name = 'citilink_spider'
-    allowed_domains = ['citilink.ru']
 
-    cookies_filename = 'citilink_cookies.pkl'
+
+class CitilinkSpider(BaseSpider):
+    name = "citilink_spider"
+    allowed_domains = ["citilink.ru"]
+
+    cookies_filename = "citilink_cookies.pkl"
     start_url = "https://www.citilink.ru/catalog/komplektuyuschie-dlya-pk/"
     REQUIRED_CATEGORIES_KEYS = category_config.REQUIRED_CATEGORIES_KEYS_citilink
     CATEGORY_KEYWORDS = category_config.CATEGORY_KEYWORDS_citilink
@@ -21,7 +23,9 @@ class CitilinkSpider(BaseSpider):
         if not links:
             links = response.xpath('//a[contains(@href, "/product/")]/@href').getall()
         if not links:
-            links = re.findall(r'https?://www\.citilink\.ru/product/[^"\'\\\s]+', response.text)
+            links = re.findall(
+                r'https?://www\.citilink\.ru/product/[^"\'\\\s]+', response.text
+            )
 
         result = []
         seen = set()
@@ -61,34 +65,40 @@ class CitilinkSpider(BaseSpider):
 
     def get_category_meta(self, category_key, db_category):
         return {
-            'category_key': category_key,
-            'category': db_category,
+            "category_key": category_key,
+            "category": db_category,
             "playwright": True,
             "playwright_context_kwargs": {"storage_state": self.storage_state},
             "playwright_page_methods": [
-                PageMethod("wait_for_selector", 'div[data-meta-name="SnippetProductVerticalLayout"]', timeout=30000),
+                PageMethod(
+                    "wait_for_selector",
+                    'div[data-meta-name="SnippetProductVerticalLayout"]',
+                    timeout=30000,
+                ),
             ],
         }
 
     def get_product_meta(self, category_key, db_category):
         return {
-            'category_key': category_key,
-            'category': db_category,
+            "category_key": category_key,
+            "category": db_category,
             "playwright": True,
             "playwright_page_methods": [
-                PageMethod("evaluate", "window.scrollTo(0, document.body.scrollHeight)"),
+                PageMethod(
+                    "evaluate", "window.scrollTo(0, document.body.scrollHeight)"
+                ),
                 PageMethod("wait_for_timeout", 2000),
-            ]
+            ],
         }
 
     def _extract_price(self, response):
-        price = response.css('[data-meta-price]::attr(data-meta-price)').get()
+        price = response.css("[data-meta-price]::attr(data-meta-price)").get()
         if not price:
             price_block = response.css('span[class*="Price"]:contains("₽")::text').get()
             if price_block:
                 price = self.clean(price_block)
         if price:
-            price = price.replace('\xa0', ' ').strip()
+            price = price.replace("\xa0", " ").strip()
         return price
 
     def _enrich_product_item(self, response, item):
@@ -98,5 +108,5 @@ class CitilinkSpider(BaseSpider):
             title = spec_item.css('span[class*="ProductPropertiesName"] ::text').get()
             value = spec_item.css('span[class*="ProductPropertiesValue"] ::text').get()
             if title and value:
-                specs[self.clean(title).rstrip(':')] = self.clean(value)
+                specs[self.clean(title).rstrip(":")] = self.clean(value)
         item.update(specs)

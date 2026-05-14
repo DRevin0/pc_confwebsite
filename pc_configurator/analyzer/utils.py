@@ -1,11 +1,12 @@
 import re
 
+
 def normalize_gpu_name(full_name: str) -> str:
     full_name = re.sub(
         r"(NVIDIA|AMD|Intel|Palit|MSI|ASUS|Gigabyte|Sapphire|PowerColor|Gainward|Zotac|KFA2|Inno3D|GamingPro|GAMING|OC|VENTUS|EAGLE|TUF|STRIX|Dual|Turbo|Phoenix|Fighter|Nitro\+?|Pulse|Challenger|Hellhound|Red Devil|XLR8|JetStream|GameRock|Edition|Ret)",
         "",
         full_name,
-        flags=re.I
+        flags=re.I,
     )
     full_name = re.sub(r"(\d)(Ti|SUPER|XT|XTX|Ultra)", r"\1 \2", full_name, flags=re.I)
     full_name = full_name.replace("-", " ")
@@ -24,10 +25,10 @@ def normalize_gpu_name(full_name: str) -> str:
             name = m.group(1)
             name = (
                 name.replace("ti", "Ti")
-                    .replace("super", "SUPER")
-                    .replace("xtx", "XTX")
-                    .replace("xt", "XT")
-                    .replace("ultra", "Ultra")
+                .replace("super", "SUPER")
+                .replace("xtx", "XTX")
+                .replace("xt", "XT")
+                .replace("ultra", "Ultra")
             )
 
             name = re.sub(r"\s+", " ", name).strip()

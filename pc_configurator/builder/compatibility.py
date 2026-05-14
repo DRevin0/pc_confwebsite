@@ -18,8 +18,8 @@ def cpu_motherboard_compatible(cpu: Component, motherboard: Component) -> bool:
     if cpu_socket and mb_socket:
         return cpu_socket == mb_socket
     if cpu_socket and not mb_socket:
-        return False  
-    return True  
+        return False
+    return True
 
 
 def ram_motherboard_compatible(ram: Component, motherboard: Component) -> bool:

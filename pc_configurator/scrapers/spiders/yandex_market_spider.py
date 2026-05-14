@@ -4,6 +4,7 @@ from scrapy_playwright.page import PageMethod
 from ..utils.category import category_config
 from .base_spider import BaseSpider
 
+
 class YandexMarketSpider(BaseSpider):
     name = "yandex_market_spider"
     allowed_domains = ["market.yandex.ru"]
@@ -30,7 +31,9 @@ class YandexMarketSpider(BaseSpider):
         links = [urljoin(response.url, href) for href in links if href]
 
         if not links:
-            links = re.findall(r"https?://market\.yandex\.ru/card/[^\"'\s>]+", response.text)
+            links = re.findall(
+                r"https?://market\.yandex\.ru/card/[^\"'\s>]+", response.text
+            )
 
         result = []
         seen = set()
@@ -78,22 +81,24 @@ class YandexMarketSpider(BaseSpider):
 
     def get_category_meta(self, category_key, db_category):
         return {
-            'category_key': category_key,
-            'category': db_category,
+            "category_key": category_key,
+            "category": db_category,
             "playwright": True,
             "playwright_context_kwargs": {"storage_state": self.storage_state},
             "playwright_page_methods": [
                 PageMethod("wait_for_selector", "body", timeout=10000),
                 PageMethod("wait_for_timeout", 3000),
-                PageMethod("evaluate", "window.scrollTo(0, document.body.scrollHeight)"),
+                PageMethod(
+                    "evaluate", "window.scrollTo(0, document.body.scrollHeight)"
+                ),
                 PageMethod("wait_for_timeout", 2000),
             ],
         }
 
     def get_product_meta(self, category_key, db_category):
         return {
-            'category_key': category_key,
-            'category': db_category,
+            "category_key": category_key,
+            "category": db_category,
             "playwright": True,
             "playwright_page_methods": [
                 PageMethod("wait_for_selector", "body", timeout=10000),
@@ -102,7 +107,10 @@ class YandexMarketSpider(BaseSpider):
         }
 
     def _extract_price(self, response):
-        m = re.search(r'"price"\s*:\s*\{\s*"value"\s*:\s*"(\d+)"\s*,\s*"currency"\s*:\s*"RUR"', response.text)
+        m = re.search(
+            r'"price"\s*:\s*\{\s*"value"\s*:\s*"(\d+)"\s*,\s*"currency"\s*:\s*"RUR"',
+            response.text,
+        )
         if m:
             return m.group(1)
         m2 = re.search(r'"price"\s*:\s*\{\s*"value"\s*:\s*"(\d+)"', response.text)
@@ -113,18 +121,24 @@ class YandexMarketSpider(BaseSpider):
     def _extract_name(self, response):
         name = self.clean(response.xpath("//h1//text()").get())
         if not name:
-            name = self.clean(response.xpath("//meta[@property='og:title']/@content").get())
+            name = self.clean(
+                response.xpath("//meta[@property='og:title']/@content").get()
+            )
         if not name:
-            ld_title = response.xpath("//script[@type='application/ld+json']//text()").get()
+            ld_title = response.xpath(
+                "//script[@type='application/ld+json']//text()"
+            ).get()
             if ld_title:
                 m = re.search(r'"title"\s*:\s*"([^"]{3,500})"', ld_title)
                 if m:
                     name = self.clean(m.group(1))
         return name
-    
+
     def _enrich_product_item(self, response, item):
         specs = {}
-        spec_blocks = response.xpath('//div[contains(@class, "_3rW2x") and contains(@class, "_1o0tA")]')
+        spec_blocks = response.xpath(
+            '//div[contains(@class, "_3rW2x") and contains(@class, "_1o0tA")]'
+        )
         for block in spec_blocks:
             if block.xpath('.//a[@data-autotest-id="full-specs-link"]'):
                 continue
@@ -132,13 +146,15 @@ class YandexMarketSpider(BaseSpider):
             name = block.xpath('.//span[@data-auto="product-spec"]/text()').get()
             if not name:
                 continue
-            if name.lower() == 'артикул маркета':
+            if name.lower() == "артикул маркета":
                 continue
-            name = self.clean(name).rstrip(':')
+            name = self.clean(name).rstrip(":")
 
             value = block.xpath('.//div[@class="b2ZT4"]//span/text()').get()
             if not value:
-                value = block.xpath('.//div[@class="b2ZT4"]//div[contains(@class, "ds-text")]/text()').get()
+                value = block.xpath(
+                    './/div[@class="b2ZT4"]//div[contains(@class, "ds-text")]/text()'
+                ).get()
             if not value:
                 value = block.xpath('.//div[@class="b2ZT4"]/text()').get()
             if value:

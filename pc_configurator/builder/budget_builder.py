@@ -8,22 +8,22 @@ from .compatibility import (
 )
 
 BUDGET_RATIOS = {
-    'gpu':         Decimal('0.35'),
-    'cpu':         Decimal('0.20'),
-    'motherboard': Decimal('0.12'),
-    'ram':         Decimal('0.08'),
-    'ssd':         Decimal('0.08'),
-    'psu':         Decimal('0.07'),
-    'case':        Decimal('0.06'),
-    'cooling':     Decimal('0.04'),
+    "gpu": Decimal("0.35"),
+    "cpu": Decimal("0.20"),
+    "motherboard": Decimal("0.12"),
+    "ram": Decimal("0.08"),
+    "ssd": Decimal("0.08"),
+    "psu": Decimal("0.07"),
+    "case": Decimal("0.06"),
+    "cooling": Decimal("0.04"),
 }
 
-REQUIRED_CATEGORIES = {'cpu', 'motherboard', 'gpu', 'ram', 'ssd'}
+REQUIRED_CATEGORIES = {"cpu", "motherboard", "gpu", "ram", "ssd"}
 
 
 def _candidates_in_budget(category: str, max_price: Decimal):
     result = []
-    for comp in Component.objects.filter(category=category).prefetch_related('prices'):
+    for comp in Component.objects.filter(category=category).prefetch_related("prices"):
         price_obj = comp.prices.first()
         if price_obj and price_obj.price <= max_price:
             result.append((comp, price_obj))
@@ -44,9 +44,11 @@ def build_by_budget(budget: float):
     budget = Decimal(str(budget))
     alloc = {cat: budget * ratio for cat, ratio in BUDGET_RATIOS.items()}
 
-    cpu_candidates = list(reversed(_candidates_in_budget('cpu', alloc['cpu'])))
-    mb_candidates  = list(reversed(_candidates_in_budget('motherboard', alloc['motherboard'])))
-    ram_candidates = list(reversed(_candidates_in_budget('ram', alloc['ram'])))
+    cpu_candidates = list(reversed(_candidates_in_budget("cpu", alloc["cpu"])))
+    mb_candidates = list(
+        reversed(_candidates_in_budget("motherboard", alloc["motherboard"]))
+    )
+    ram_candidates = list(reversed(_candidates_in_budget("ram", alloc["ram"])))
 
     picked = {}
     price_objs = {}
@@ -65,11 +67,11 @@ def build_by_budget(budget: float):
             if ram_comp is None and ram_candidates:
                 ram_comp, ram_po = ram_candidates[0]
 
-            picked = {'cpu': cpu, 'motherboard': mb}
-            price_objs = {'cpu': cpu_po, 'motherboard': mb_po}
+            picked = {"cpu": cpu, "motherboard": mb}
+            price_objs = {"cpu": cpu_po, "motherboard": mb_po}
             if ram_comp:
-                picked['ram'] = ram_comp
-                price_objs['ram'] = ram_po
+                picked["ram"] = ram_comp
+                price_objs["ram"] = ram_po
             found = True
             break
         if found:
@@ -81,14 +83,14 @@ def build_by_budget(budget: float):
     def _spent():
         return sum(po.price for po in price_objs.values())
 
-    gpu_comp, gpu_po = _best_in_budget('gpu', alloc['gpu'])
+    gpu_comp, gpu_po = _best_in_budget("gpu", alloc["gpu"])
     if gpu_comp is None:
-        gpu_comp, gpu_po = _cheapest_in_budget('gpu', budget - _spent())
+        gpu_comp, gpu_po = _cheapest_in_budget("gpu", budget - _spent())
     if gpu_comp:
-        picked['gpu'] = gpu_comp
-        price_objs['gpu'] = gpu_po
+        picked["gpu"] = gpu_comp
+        price_objs["gpu"] = gpu_po
 
-    for category in ('ssd', 'psu', 'cooling', 'case'):
+    for category in ("ssd", "psu", "cooling", "case"):
         remaining = budget - _spent()
         if remaining <= 0:
             break
@@ -102,14 +104,14 @@ def build_by_budget(budget: float):
         return None
 
     return {
-        'items': [
+        "items": [
             {
-                'component': comp,
-                'price': price_objs[cat].price,
-                'price_date': price_objs[cat].recorded_at,
+                "component": comp,
+                "price": price_objs[cat].price,
+                "price_date": price_objs[cat].recorded_at,
             }
             for cat, comp in picked.items()
         ],
-        'total': _spent(),
-        'budget': budget,
+        "total": _spent(),
+        "budget": budget,
     }

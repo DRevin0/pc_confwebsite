@@ -14,7 +14,9 @@ DEFAULT_START_URL = (
 
 deps_dir = str(ROOT_DIR / ".python_deps")
 browsers_dir = str(ROOT_DIR / ".playwright_browsers")
-pythonpath = deps_dir + (os.environ.get("PYTHONPATH", "") and (":" + os.environ["PYTHONPATH"]) or "")
+pythonpath = deps_dir + (
+    os.environ.get("PYTHONPATH", "") and (":" + os.environ["PYTHONPATH"]) or ""
+)
 
 env = dict(os.environ)
 env["PYTHONPATH"] = pythonpath
@@ -24,7 +26,13 @@ if not COOKIES_PATH.exists():
     subprocess.run(
         [
             sys.executable,
-            str(BASE_DIR / "scrapers" / "utils" / "cookie_fetchers" / "get_yandex_market_cookies.py"),
+            str(
+                BASE_DIR
+                / "scrapers"
+                / "utils"
+                / "cookie_fetchers"
+                / "get_yandex_market_cookies.py"
+            ),
         ],
         check=True,
         env=env,
@@ -42,4 +50,3 @@ subprocess.run(
     check=True,
     env=env,
 )
-

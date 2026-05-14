@@ -8,15 +8,12 @@ def main():
     cookies_dir.mkdir(exist_ok=True)
     cookies_path = cookies_dir / "citilink_cookies.pkl"
 
-    url = (
-        "https://www.citilink.ru/catalog/processory/?ref=mainpage_popular"
-    )
+    url = "https://www.citilink.ru/catalog/processory/?ref=mainpage_popular"
 
     with sync_playwright() as p:
         browser = p.chromium.launch(
             headless=False,
-            args=["--disable-blink-features=AutomationControlled",
-                  "--no-proxy-server"],
+            args=["--disable-blink-features=AutomationControlled", "--no-proxy-server"],
         )
         context = browser.new_context(
             locale="ru-RU",

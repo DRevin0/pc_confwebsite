@@ -8,43 +8,107 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Component',
+            name="Component",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=500, verbose_name='Название')),
-                ('category', models.CharField(choices=[('cpu', 'Процессор'), ('motherboard', 'Материнская плата'), ('gpu', 'Видеокарта'), ('ssd', 'SSD'), ('ram', 'Оперативная память'), ('psu', 'Блок питания'), ('cooling', 'Охлаждение'), ('case', 'Корпус')], max_length=50, verbose_name='Категория')),
-                ('url', models.URLField(unique=True, verbose_name='Ссылка на товар')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=500, verbose_name="Название")),
+                (
+                    "category",
+                    models.CharField(
+                        choices=[
+                            ("cpu", "Процессор"),
+                            ("motherboard", "Материнская плата"),
+                            ("gpu", "Видеокарта"),
+                            ("ssd", "SSD"),
+                            ("ram", "Оперативная память"),
+                            ("psu", "Блок питания"),
+                            ("cooling", "Охлаждение"),
+                            ("case", "Корпус"),
+                        ],
+                        max_length=50,
+                        verbose_name="Категория",
+                    ),
+                ),
+                ("url", models.URLField(unique=True, verbose_name="Ссылка на товар")),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
         ),
         migrations.CreateModel(
-            name='Price',
+            name="Price",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('price', models.DecimalField(decimal_places=2, max_digits=10, verbose_name='Цена')),
-                ('recorded_at', models.DateTimeField(auto_now_add=True, verbose_name='Дата записи')),
-                ('component', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='prices', to='components.component')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "price",
+                    models.DecimalField(
+                        decimal_places=2, max_digits=10, verbose_name="Цена"
+                    ),
+                ),
+                (
+                    "recorded_at",
+                    models.DateTimeField(auto_now_add=True, verbose_name="Дата записи"),
+                ),
+                (
+                    "component",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="prices",
+                        to="components.component",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-recorded_at'],
+                "ordering": ["-recorded_at"],
             },
         ),
         migrations.CreateModel(
-            name='Spec',
+            name="Spec",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('key', models.CharField(max_length=200, verbose_name='Характеристика')),
-                ('value', models.CharField(max_length=500, verbose_name='Значение')),
-                ('component', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='specs', to='components.component')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "key",
+                    models.CharField(max_length=200, verbose_name="Характеристика"),
+                ),
+                ("value", models.CharField(max_length=500, verbose_name="Значение")),
+                (
+                    "component",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="specs",
+                        to="components.component",
+                    ),
+                ),
             ],
             options={
-                'unique_together': {('component', 'key')},
+                "unique_together": {("component", "key")},
             },
         ),
     ]

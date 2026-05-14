@@ -5,14 +5,14 @@ import django
 from asgiref.sync import sync_to_async
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 django.setup()
 
 from analyzer.models import GPUFPS
 
 
 class SaveFPSPipeline:
-    
+
     async def process_item(self, item, spider):
         if spider.name != "gpu_spider":
             return item
@@ -37,12 +37,15 @@ class SaveFPSPipeline:
                 defaults={
                     "fps_min": fps_min,
                     "fps_max": fps_max,
-                }
+                },
             )
-            spider.logger.info(f"FPS сохранён: {gpu_name} | {game} | {resolution} | created={created}")
+            spider.logger.info(
+                f"FPS сохранён: {gpu_name} | {game} | {resolution} | created={created}"
+            )
         except Exception as e:
             spider.logger.error(f"Ошибка сохранения FPS: {e}")
             import traceback
+
             traceback.print_exc()
 
         return item

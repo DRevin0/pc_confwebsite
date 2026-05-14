@@ -5,11 +5,12 @@ from scrapy_playwright.page import PageMethod
 from ..utils.category import category_config
 from .base_spider import BaseSpider
 
-class DnsSpider(BaseSpider):
-    name = 'dns_spider'
-    allowed_domains = ['dns-shop.ru']
 
-    cookies_filename = 'dns_cookies.pkl'
+class DnsSpider(BaseSpider):
+    name = "dns_spider"
+    allowed_domains = ["dns-shop.ru"]
+
+    cookies_filename = "dns_cookies.pkl"
     start_url = "https://www.dns-shop.ru/catalog/88f4ff1d39dee00e/osnovnye-komplektuusie-dla-pk/"
 
     REQUIRED_CATEGORIES_KEYS = category_config.REQUIRED_CATEGORIES_KEYS_dns
@@ -19,11 +20,13 @@ class DnsSpider(BaseSpider):
     ITEMS_PER_CATEGORY = 3
 
     def extract_product_links(self, response):
-        links = response.css('a.catalog-product__name::attr(href)').getall()
+        links = response.css("a.catalog-product__name::attr(href)").getall()
         if not links:
             links = response.xpath('//a[contains(@href, "/product/")]/@href').getall()
         if not links:
-            links = re.findall(r'https?://www\.dns-shop\.ru/product/[^"\'\\\s>]+', response.text)
+            links = re.findall(
+                r'https?://www\.dns-shop\.ru/product/[^"\'\\\s>]+', response.text
+            )
 
         result = []
         seen = set()
@@ -63,8 +66,8 @@ class DnsSpider(BaseSpider):
 
     def get_category_meta(self, category_key, db_category):
         return {
-            'category_key': category_key,
-            'category': db_category,
+            "category_key": category_key,
+            "category": db_category,
             "playwright": True,
             "playwright_context_kwargs": {"storage_state": self.storage_state},
             "playwright_page_methods": [
@@ -74,31 +77,33 @@ class DnsSpider(BaseSpider):
 
     def get_product_meta(self, category_key, db_category):
         return {
-            'category_key': category_key,
-            'category': db_category,
+            "category_key": category_key,
+            "category": db_category,
             "playwright": True,
             "playwright_page_methods": [
-                PageMethod("evaluate", "window.scrollTo(0, document.body.scrollHeight)"),
+                PageMethod(
+                    "evaluate", "window.scrollTo(0, document.body.scrollHeight)"
+                ),
                 PageMethod("wait_for_timeout", 2000),
-            ]
+            ],
         }
 
     def _extract_price(self, response):
-        price = response.css('div.product-buy__price::text').get()
+        price = response.css("div.product-buy__price::text").get()
         if price:
-            price = price.replace('\xa0', ' ').strip()
+            price = price.replace("\xa0", " ").strip()
         else:
-            price = response.css('div.product-buy_price-wrap span::text').get()
+            price = response.css("div.product-buy_price-wrap span::text").get()
         if price:
             price = self.clean(price)
         return price
 
     def _enrich_product_item(self, response, item):
         specs = {}
-        titles = response.css('div.product-card-top__specs-item-title::text').getall()
-        values = response.css('div.product-card-top__specs-item-content::text').getall()
+        titles = response.css("div.product-card-top__specs-item-title::text").getall()
+        values = response.css("div.product-card-top__specs-item-content::text").getall()
         if titles and values:
             for title, value in zip(titles, values):
                 if title and value:
-                    specs[self.clean(title).rstrip(':')] = self.clean(value)
+                    specs[self.clean(title).rstrip(":")] = self.clean(value)
         item.update(specs)

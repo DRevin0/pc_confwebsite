@@ -7,20 +7,27 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='GPUFPS',
+            name="GPUFPS",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('gpu_name', models.CharField(max_length=255)),
-                ('game', models.CharField(max_length=255)),
-                ('resolution', models.CharField(max_length=64)),
-                ('fps_min', models.IntegerField()),
-                ('fps_max', models.IntegerField()),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("gpu_name", models.CharField(max_length=255)),
+                ("game", models.CharField(max_length=255)),
+                ("resolution", models.CharField(max_length=64)),
+                ("fps_min", models.IntegerField()),
+                ("fps_max", models.IntegerField()),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
         ),
     ]

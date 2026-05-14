@@ -1,0 +1,11 @@
+[tool.black]
+line-length = 88
+target-version = ["py312"]
+extend-exclude = '''
+/(
+  \.git
+  | \.venv
+  | __pycache__
+  | data
+)/
+'''

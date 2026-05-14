@@ -16,8 +16,7 @@ def main():
     with sync_playwright() as p:
         browser = p.chromium.launch(
             headless=False,
-            args=["--disable-blink-features=AutomationControlled",
-                  "--no-proxy-server"],
+            args=["--disable-blink-features=AutomationControlled", "--no-proxy-server"],
         )
         context = browser.new_context(
             locale="ru-RU",
@@ -46,4 +45,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

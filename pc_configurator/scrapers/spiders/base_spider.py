@@ -3,6 +3,8 @@ import pickle
 import json
 from pathlib import Path
 from scrapy_playwright.page import PageMethod
+
+
 class BaseSpider(scrapy.Spider):
     cookies_filename = None
     start_url = None
@@ -32,28 +34,34 @@ class BaseSpider(scrapy.Spider):
             return
         cookies_path = Path(__file__).parent.parent / "cookies" / self.cookies_filename
         try:
-            with open(cookies_path, 'rb') as f:
+            with open(cookies_path, "rb") as f:
                 cookies_list = pickle.load(f)
             self.storage_state = {
                 "cookies": [
                     {
-                        "name": c['name'],
-                        "value": c['value'],
-                        "domain": c.get('domain', '.dns-shop.ru'),  # уточнять в дочерних
-                        "path": c.get('path', '/'),
-                        "expires": c.get('expires', -1),
-                        "httpOnly": c.get('httpOnly', False),
-                        "secure": c.get('secure', True),
-                        "sameSite": c.get('sameSite', 'Lax'),
+                        "name": c["name"],
+                        "value": c["value"],
+                        "domain": c.get(
+                            "domain", ".dns-shop.ru"
+                        ),  # уточнять в дочерних
+                        "path": c.get("path", "/"),
+                        "expires": c.get("expires", -1),
+                        "httpOnly": c.get("httpOnly", False),
+                        "secure": c.get("secure", True),
+                        "sameSite": c.get("sameSite", "Lax"),
                     }
                     for c in cookies_list
                 ]
             }
-            self.logger.info(f"Загружено {len(self.storage_state['cookies'])} кук из {self.cookies_filename}")
+            self.logger.info(
+                f"Загружено {len(self.storage_state['cookies'])} кук из {self.cookies_filename}"
+            )
         except FileNotFoundError:
-            self.logger.error(f"Файл {self.cookies_filename} не найден. Сначала запустите скрипт получения кук.")
+            self.logger.error(
+                f"Файл {self.cookies_filename} не найден. Сначала запустите скрипт получения кук."
+            )
             self.storage_state = None
-    
+
     def start_requests(self):
         if not self.storage_state:
             self.logger.error("Файлы cookie не найдены, завершение работы")
@@ -67,15 +75,15 @@ class BaseSpider(scrapy.Spider):
                 yield scrapy.Request(
                     url,
                     callback=self.parse_category,
-                    meta=self.get_category_meta(cat_key, db_category)
+                    meta=self.get_category_meta(cat_key, db_category),
                 )
         else:
             yield scrapy.Request(
                 self.start_url,
                 callback=self.init_categories,
-                meta=self.get_start_meta()
+                meta=self.get_start_meta(),
             )
-    
+
     def init_categories(self, response):
         self.categories = self.extract_category_urls(response)
         if not self.categories:
@@ -94,7 +102,9 @@ class BaseSpider(scrapy.Spider):
         if missing:
             self.logger.warning(f"Не найдены категории: {missing}")
 
-        self.category_counts = {cat: 0 for cat in self.categories if cat in self.REQUIRED_CATEGORIES_KEYS}
+        self.category_counts = {
+            cat: 0 for cat in self.categories if cat in self.REQUIRED_CATEGORIES_KEYS
+        }
 
         for cat_key, url in self.categories.items():
             if cat_key not in self.REQUIRED_CATEGORIES_KEYS or not url:
@@ -103,12 +113,12 @@ class BaseSpider(scrapy.Spider):
             yield scrapy.Request(
                 url,
                 callback=self.parse_category,
-                meta=self.get_category_meta(cat_key, db_category)
+                meta=self.get_category_meta(cat_key, db_category),
             )
-    
+
     def parse_category(self, response):
-        category_key = response.meta.get('category_key')
-        db_category = response.meta.get('category')
+        category_key = response.meta.get("category_key")
+        db_category = response.meta.get("category")
         if not category_key:
             return
 
@@ -132,12 +142,12 @@ class BaseSpider(scrapy.Spider):
             yield scrapy.Request(
                 product_url,
                 callback=self.parse_product,
-                meta=self.get_product_meta(category_key, db_category)
+                meta=self.get_product_meta(category_key, db_category),
             )
 
     def parse_product(self, response):
-        category_key = response.meta.get('category_key')
-        db_category = response.meta.get('category')
+        category_key = response.meta.get("category_key")
+        db_category = response.meta.get("category")
 
         if self.category_counts.get(category_key, 0) >= self.ITEMS_PER_CATEGORY:
             return
@@ -146,15 +156,17 @@ class BaseSpider(scrapy.Spider):
         price = self._extract_price(response)
 
         item = {
-            'name': name,
-            'price': price,
-            'url': response.url,
-            'category': db_category,
+            "name": name,
+            "price": price,
+            "url": response.url,
+            "category": db_category,
         }
 
         self._enrich_product_item(response, item)
 
-        self.category_counts[category_key] = self.category_counts.get(category_key, 0) + 1
+        self.category_counts[category_key] = (
+            self.category_counts.get(category_key, 0) + 1
+        )
 
         yield item
 
@@ -169,7 +181,7 @@ class BaseSpider(scrapy.Spider):
 
     def extract_category_urls(self, response):
         raise NotImplementedError
-    
+
     def _extract_name(self, response):
         return self.clean(response.xpath("//h1//text()").get())
 
@@ -180,7 +192,9 @@ class BaseSpider(scrapy.Spider):
             "playwright_page_methods": [
                 PageMethod("wait_for_selector", "body", timeout=10000),
                 PageMethod("wait_for_timeout", 3000),
-                PageMethod("evaluate", "window.scrollTo(0, document.body.scrollHeight)"),
+                PageMethod(
+                    "evaluate", "window.scrollTo(0, document.body.scrollHeight)"
+                ),
                 PageMethod("wait_for_timeout", 2000),
             ],
         }
@@ -188,14 +202,16 @@ class BaseSpider(scrapy.Spider):
     def get_category_meta(self, category_key, db_category):
         """Мета для запроса страницы категории."""
         return {
-            'category_key': category_key,
-            'category': db_category,
+            "category_key": category_key,
+            "category": db_category,
             "playwright": True,
             "playwright_context_kwargs": {"storage_state": self.storage_state},
             "playwright_page_methods": [
                 PageMethod("wait_for_selector", "body", timeout=10000),
                 PageMethod("wait_for_timeout", 3000),
-                PageMethod("evaluate", "window.scrollTo(0, document.body.scrollHeight)"),
+                PageMethod(
+                    "evaluate", "window.scrollTo(0, document.body.scrollHeight)"
+                ),
                 PageMethod("wait_for_timeout", 2000),
             ],
         }
@@ -203,17 +219,17 @@ class BaseSpider(scrapy.Spider):
     def get_product_meta(self, category_key, db_category):
         """Мета для запроса карточки товара."""
         return {
-            'category_key': category_key,
-            'category': db_category,
+            "category_key": category_key,
+            "category": db_category,
             "playwright": True,
             "playwright_page_methods": [
-                PageMethod("evaluate", "window.scrollTo(0, document.body.scrollHeight)"),
+                PageMethod(
+                    "evaluate", "window.scrollTo(0, document.body.scrollHeight)"
+                ),
                 PageMethod("wait_for_timeout", 2000),
-            ]
+            ],
         }
-    
+
     @staticmethod
     def clean(text):
         return (text or "").strip()
-    
-

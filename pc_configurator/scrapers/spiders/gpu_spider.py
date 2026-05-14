@@ -5,8 +5,9 @@ from scrapers.utils.helper_analyzer import build_technical_city_url
 
 logger = logging.getLogger(__name__)
 
+
 class TechnicalCityGPU(scrapy.Spider):
-    name = "gpu_spider" 
+    name = "gpu_spider"
 
     def __init__(self, gpu_name=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -31,10 +32,18 @@ class TechnicalCityGPU(scrapy.Spider):
 
         tabs = response.css("div.tabs div.tab")
         for i, tab in enumerate(tabs):
-            raw_label = tab_labels[i] if i < len(tab_labels) else (tab.xpath("string(.)").get() or "").strip()
-            normalized = self._normalize_tab_label(raw_label) if raw_label else f"unknown-{i}"
+            raw_label = (
+                tab_labels[i]
+                if i < len(tab_labels)
+                else (tab.xpath("string(.)").get() or "").strip()
+            )
+            normalized = (
+                self._normalize_tab_label(raw_label) if raw_label else f"unknown-{i}"
+            )
 
-            short_resolution = normalized.split("_", 1)[0] if "_" in normalized else normalized
+            short_resolution = (
+                normalized.split("_", 1)[0] if "_" in normalized else normalized
+            )
 
             for row in tab.css("table.compare-table tr"):
                 game = row.css("td:nth-child(1)::text").get()
@@ -54,7 +63,7 @@ class TechnicalCityGPU(scrapy.Spider):
                 yield {
                     "gpu_name": self.gpu_name,
                     "game": game.strip(),
-                    "resolution": short_resolution, 
+                    "resolution": short_resolution,
                     "fps_min": fps_min,
                     "fps_max": fps_max,
                 }
@@ -62,11 +71,11 @@ class TechnicalCityGPU(scrapy.Spider):
     def _normalize_tab_label(self, raw: str) -> str:
         if not raw:
             return "unknown"
-        t = re.sub(r'\s+', ' ', raw).strip().lower()
+        t = re.sub(r"\s+", " ", raw).strip().lower()
         t = t.replace("full hd", "fullhd")
         t = t.replace("4 k", "4k")
         t = t.replace(" ", "_").replace("/", "_")
-        t = re.sub(r'[^a-z0-9_]+', '', t)
+        t = re.sub(r"[^a-z0-9_]+", "", t)
         return t or "unknown"
 
     @staticmethod
@@ -78,15 +87,13 @@ class TechnicalCityGPU(scrapy.Spider):
         if "−" in t:
             parts = [p for p in t.split("−") if p]
             try:
-                a = int(re.search(r'\d+', parts[0]).group())
-                b = int(re.search(r'\d+', parts[1]).group()) if len(parts) > 1 else a
+                a = int(re.search(r"\d+", parts[0]).group())
+                b = int(re.search(r"\d+", parts[1]).group()) if len(parts) > 1 else a
                 return a, b
             except Exception:
                 return None, None
-        m = re.search(r'\d+', t)
+        m = re.search(r"\d+", t)
         if m:
             v = int(m.group())
             return v, v
         return None, None
-
-
