@@ -25,14 +25,19 @@
                         <div class="alert alert-success d-flex align-items-start gap-2" role="alert">
                             <i class="bi bi-check-circle-fill mt-1"></i>
                             <div>
-                                Обращение принято. В текущей версии проекта форма показывает успешную отправку,
-                                а подключение email или сохранение заявок можно добавить следующим этапом.
+                                Обращение принято и сохранено.
                             </div>
                         </div>
                     {% endif %}
 
                     <form method="post" novalidate>
                         {% csrf_token %}
+                        {{ form.website }}
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger" role="alert">
+                                {{ form.non_field_errors|join:", " }}
+                            </div>
+                        {% endif %}
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label for="{{ form.name.id_for_label }}" class="form-label">{{ form.name.label }}</label>
@@ -49,10 +54,27 @@
                                 {% endif %}
                             </div>
                             <div class="col-12">
+                                <label for="{{ form.contact.id_for_label }}" class="form-label">{{ form.contact.label }}</label>
+                                {{ form.contact }}
+                                {% if form.contact.help_text %}
+                                    <div class="form-text text-secondary">{{ form.contact.help_text }}</div>
+                                {% endif %}
+                                {% if form.contact.errors %}
+                                    <div class="text-danger small mt-1">{{ form.contact.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-12">
                                 <label for="{{ form.topic.id_for_label }}" class="form-label">{{ form.topic.label }}</label>
                                 {{ form.topic }}
                                 {% if form.topic.errors %}
                                     <div class="text-danger small mt-1">{{ form.topic.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-12">
+                                <label for="{{ form.subject.id_for_label }}" class="form-label">{{ form.subject.label }}</label>
+                                {{ form.subject }}
+                                {% if form.subject.errors %}
+                                    <div class="text-danger small mt-1">{{ form.subject.errors|join:", " }}</div>
                                 {% endif %}
                             </div>
                             <div class="col-12">
